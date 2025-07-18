@@ -1,0 +1,50 @@
+Check,Table,Column,Passed,Detail
+Table exists,combine_data,,True,✓ Found
+Table exists,draft_picks,,True,✓ Found
+Table exists,draft_values,,True,✓ Found
+Table exists,id_mappings,,True,✓ Found
+Column exists,id_mappings,player_id,False,
+Table exists,team_info,,True,✓ Found
+Column exists,team_info,team_id,True,
+Column exists,team_info,team_name,True,
+Table exists,seasonal_stats,,True,✓ Found
+Column exists,seasonal_stats,player_id,True,
+Column exists,seasonal_stats,season,True,
+Table exists,weekly_stats,,True,✓ Found
+Column exists,weekly_stats,player_id,True,
+Column exists,weekly_stats,season,True,
+Table exists,seasonal_rosters,,True,✓ Found
+Column exists,seasonal_rosters,player_id,True,
+Column exists,seasonal_rosters,team_id,False,
+PK uniqueness,id_mappings,player_id,False,"Error: (pyodbc.ProgrammingError) ('42S22', ""[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'player_id'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'player_id'. (207)"")
+[SQL: SELECT COUNT(*) AS dupes FROM (SELECT player_id FROM id_mappings GROUP BY player_id HAVING COUNT(*) > 1) AS sub]
+(Background on this error at: https://sqlalche.me/e/14/f405)"
+PK uniqueness,team_info,team_id,False,3 duplicates
+FK integrity,seasonal_stats,player_id,True,✓ OK
+FK integrity,seasonal_rosters,player_id,True,✓ OK
+FK integrity,weekly_stats,player_id,True,✓ OK
+FK integrity,seasonal_rosters,team_id,False,"Error: (pyodbc.ProgrammingError) ('42S22', ""[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'team_id'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'team_id'. (207)"")
+[SQL: 
+        SELECT COUNT(*) AS missing
+        FROM seasonal_rosters
+        WHERE team_id IS NOT NULL
+        AND team_id NOT IN (SELECT DISTINCT team_id FROM team_info)
+        ]
+(Background on this error at: https://sqlalche.me/e/14/f405)"
+FK integrity,weekly_stats,team_id,False,"Error: (pyodbc.ProgrammingError) ('42S22', ""[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'team_id'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'team_id'. (207)"")
+[SQL: 
+        SELECT COUNT(*) AS missing
+        FROM weekly_stats
+        WHERE team_id IS NOT NULL
+        AND team_id NOT IN (SELECT DISTINCT team_id FROM team_info)
+        ]
+(Background on this error at: https://sqlalche.me/e/14/f405)"
+NULL check,id_mappings,player_id,False,"Error: (pyodbc.ProgrammingError) ('42S22', ""[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'player_id'. (207) (SQLExecDirectW)"")
+[SQL: SELECT COUNT(*) AS n FROM id_mappings WHERE player_id IS NULL]
+(Background on this error at: https://sqlalche.me/e/14/f405)"
+NULL check,team_info,team_id,True,✓ OK
+NULL check,team_info,team_name,True,✓ OK
+NULL check,seasonal_stats,player_id,True,✓ OK
+NULL check,seasonal_stats,season,True,✓ OK
+NULL check,weekly_stats,player_id,True,✓ OK
+NULL check,weekly_stats,season,True,✓ OK
