@@ -1,0 +1,36 @@
+[2025-03-18 16:26:45] 🚀 Starting Exit Velocity Model Training...
+
+[2025-03-18 16:26:45] 🔄 Loading cleaned dataset for Exit Velocity...
+
+[2025-03-18 16:26:45] ✅ No missing values detected. Proceeding...
+
+[2025-03-18 16:26:45] ✅ Numeric predictors and target scaling standardized and saved.
+
+[2025-03-18 16:26:45] 🔍 Checking data structure before training...
+
+[2025-03-18 16:26:45] ✅ Base Exit Velocity Model already exists. Skipping training.
+
+[2025-03-18 16:26:45] ✅ Advanced Exit Velocity Model already exists. Skipping training.
+
+[2025-03-18 16:26:45] ✅ Test set saved for prediction.
+
+[2025-03-18 16:26:45] 🎉 Exit Velocity model training completed successfully!
+
+[2025-03-18 16:26:45] 🔄 Loading TEST dataset for EV predictions...
+
+[2025-03-18 16:26:45] ✅ No missing values detected. Proceeding with predictions...
+
+[2025-03-18 16:26:45] ✅ Base_EV Model loaded successfully.
+
+[2025-03-18 16:26:45] ✅ Advanced_EV Model loaded successfully.
+
+[2025-03-18 16:26:45] 🚀 Predicting with Base_EV Model...
+
+[2025-03-18 16:26:46] ✅ Base_EV predictions added and scaled back.
+
+[2025-03-18 16:26:46] 🚀 Predicting with Advanced_EV Model...
+
+[2025-03-18 16:26:46] ✅ Advanced_EV predictions added and scaled back.
+
+[2025-03-18 16:26:46] ✅ Test set predictions saved to: C:/Repos/Athlyticz_Projects/ATH_Biomech_Hit/outputs/exit_velocity/ev_predictions_test.csv
+

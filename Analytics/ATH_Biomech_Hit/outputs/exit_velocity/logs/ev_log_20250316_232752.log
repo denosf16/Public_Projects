@@ -1,0 +1,170 @@
+[2025-03-16 23:27:52] 🚀 Exit Velocity Feature Selection Started...
+
+[2025-03-16 23:27:52] ✅ Train Size: 476 Test Size: 201
+
+[2025-03-16 23:27:52] 🔥 Using Previously Found Best EV Hyperparameters:
+
+[2025-03-16 23:27:52] 🔥 Best Hyperparameters Found:
+
+[2025-03-16 23:27:52] $eta
+
+[2025-03-16 23:27:52] [1] 0.04076756
+
+[2025-03-16 23:27:52] 
+
+[2025-03-16 23:27:52] $max_depth
+
+[2025-03-16 23:27:52] [1] 4
+
+[2025-03-16 23:27:52] 
+
+[2025-03-16 23:27:52] $gamma
+
+[2025-03-16 23:27:52] [1] 0.7044199
+
+[2025-03-16 23:27:52] 
+
+[2025-03-16 23:27:52] $colsample_bytree
+
+[2025-03-16 23:27:52] [1] 0.6807796
+
+[2025-03-16 23:27:52] 
+
+[2025-03-16 23:27:52] $min_child_weight
+
+[2025-03-16 23:27:52] [1] 5
+
+[2025-03-16 23:27:52] 
+
+[2025-03-16 23:27:52] $subsample
+
+[2025-03-16 23:27:52] [1] 0.7619161
+
+[2025-03-16 23:27:52] 
+
+[2025-03-16 23:28:06] 🔹 Using 50 features from XGBoost/SHAP.
+
+[2025-03-16 23:29:08] 🚨 Identified Aliased Variables (Perfectly Collinear):
+
+[2025-03-16 23:29:08]   [1] "(Intercept)"                           "session_mass_lbs"                     
+
+[2025-03-16 23:29:08]   [3] "session_height_in"                     "athlete_age"                          
+
+[2025-03-16 23:29:08]   [5] "bat_weight_oz"                         "bat_length_in"                        
+
+[2025-03-16 23:29:08]   [7] "bat_speed_mph_max_x"                   "blast_bat_speed_mph_x"                
+
+[2025-03-16 23:29:08]   [9] "user"                                  "session"                              
+
+[2025-03-16 23:29:08]  [11] "bat_speed_mph_contact_x"               "sweet_spot_velo_mph_contact_x"        
+
+[2025-03-16 23:29:08]  [13] "sweet_spot_velo_mph_contact_y"         "sweet_spot_velo_mph_contact_z"        
+
+[2025-03-16 23:29:08]  [15] "bat_torso_angle_connection_x"          "attack_angle_contact_x"               
+
+[2025-03-16 23:29:08]  [17] "bat_speed_xy_max_x"                    "bat_torso_angle_ds_x"                 
+
+[2025-03-16 23:29:08]  [19] "bat_torso_angle_ds_z"                  "hand_speed_blast_bat_mph_max_x"       
+
+[2025-03-16 23:29:08]  [21] "hand_speed_mag_max_x"                  "pelvis_angle_fm_x"                    
+
+[2025-03-16 23:29:08]  [23] "pelvis_angle_fm_y"                     "pelvis_angle_fm_z"                    
+
+[2025-03-16 23:29:08]  [25] "pelvis_angle_fp_x"                     "pelvis_angle_fp_y"                    
+
+[2025-03-16 23:29:08]  [27] "pelvis_angle_fp_z"                     "pelvis_angle_hs_x"                    
+
+[2025-03-16 23:29:08]  [29] "pelvis_angle_hs_y"                     "pelvis_angle_hs_z"                    
+
+[2025-03-16 23:29:08]  [31] "torso_angle_fm_x"                      "torso_angle_fm_y"                     
+
+[2025-03-16 23:29:08]  [33] "torso_angle_fm_z"                      "torso_angle_fp_x"                     
+
+[2025-03-16 23:29:08]  [35] "torso_angle_fp_y"                      "torso_angle_fp_z"                     
+
+[2025-03-16 23:29:08]  [37] "torso_angle_hs_x"                      "torso_angle_hs_y"                     
+
+[2025-03-16 23:29:08]  [39] "torso_angle_hs_z"                      "upper_arm_speed_mag_max_x"            
+
+[2025-03-16 23:29:08]  [41] "x_factor_fm_x"                         "x_factor_fm_y"                        
+
+[2025-03-16 23:29:08]  [43] "x_factor_fm_z"                         "x_factor_fp_x"                        
+
+[2025-03-16 23:29:08]  [45] "x_factor_fp_y"                         "x_factor_fp_z"                        
+
+[2025-03-16 23:29:08]  [47] "bat_max_x"                             "bat_min_x"                            
+
+[2025-03-16 23:29:08]  [49] "hand_speed_mag_fm_x"                   "hand_speed_mag_fp_x"                  
+
+[2025-03-16 23:29:08]  [51] "hand_speed_mag_maxhss_x"               "hand_speed_mag_stride_max_velo_x"     
+
+[2025-03-16 23:29:08]  [53] "hand_speed_mag_swing_max_velo_x"       "lead_knee_launchpos_x"                
+
+[2025-03-16 23:29:08]  [55] "lead_knee_stride_max_x"                "lead_wrist_fm_x"                      
+
+[2025-03-16 23:29:08]  [57] "lead_wrist_swing_max_x"                "pelvis_angular_velocity_fm_x"         
+
+[2025-03-16 23:29:08]  [59] "pelvis_angular_velocity_fp_x"          "pelvis_angular_velocity_maxhss_x"     
+
+[2025-03-16 23:29:08]  [61] "pelvis_angular_velocity_seq_max_x"     "pelvis_angular_velocity_stride_max_x" 
+
+[2025-03-16 23:29:08]  [63] "pelvis_loadedpos_x"                    "pelvis_load_max_x"                    
+
+[2025-03-16 23:29:08]  [65] "pelvis_stride_max_x"                   "pelvis_stride_max_y"                  
+
+[2025-03-16 23:29:08]  [67] "pelvis_stride_max_z"                   "pelvis_swing_max_x"                   
+
+[2025-03-16 23:29:08]  [69] "pelvis_swing_max_y"                    "pelvis_swing_max_z"                   
+
+[2025-03-16 23:29:08]  [71] "rear_elbow_fm_x"                       "rear_elbow_fm_z"                      
+
+[2025-03-16 23:29:08]  [73] "rear_elbow_launchpos_x"                "rear_elbow_stride_max_x"              
+
+[2025-03-16 23:29:08]  [75] "rear_elbow_stride_max_z"               "rear_elbow_swing_max_x"               
+
+[2025-03-16 23:29:08]  [77] "rear_elbow_swing_max_z"                "rear_hip_launchpos_x"                 
+
+[2025-03-16 23:29:08]  [79] "rear_hip_stride_max_x"                 "rear_hip_stride_max_y"                
+
+[2025-03-16 23:29:08]  [81] "rear_hip_stride_max_z"                 "rear_shoulder_launchpos_x"            
+
+[2025-03-16 23:29:08]  [83] "rear_shoulder_stride_max_x"            "rear_shoulder_stride_max_y"           
+
+[2025-03-16 23:29:08]  [85] "rear_shoulder_stride_max_z"            "torso_angular_velocity_fm_x"          
+
+[2025-03-16 23:29:08]  [87] "torso_angular_velocity_fp_x"           "torso_angular_velocity_maxhss_x"      
+
+[2025-03-16 23:29:08]  [89] "torso_angular_velocity_stride_max_x"   "torso_angular_velocity_seq_max_x"     
+
+[2025-03-16 23:29:08]  [91] "torso_loadedpos_x"                     "torso_load_max_x"                     
+
+[2025-03-16 23:29:08]  [93] "torso_pelvis_loadedpos_x"              "torso_pelvis_load_max_x"              
+
+[2025-03-16 23:29:08]  [95] "torso_pelvis_stride_max_x"             "torso_pelvis_stride_max_y"            
+
+[2025-03-16 23:29:08]  [97] "torso_pelvis_stride_max_z"             "torso_pelvis_swing_max_x"             
+
+[2025-03-16 23:29:08]  [99] "torso_stride_max_x"                    "torso_stride_max_y"                   
+
+[2025-03-16 23:29:08] [101] "torso_stride_max_z"                    "torso_swing_max_x"                    
+
+[2025-03-16 23:29:08] [103] "torso_swing_max_y"                     "torso_swing_max_z"                    
+
+[2025-03-16 23:29:08] [105] "upper_arm_speed_mag_fm_x"              "upper_arm_speed_mag_fp_x"             
+
+[2025-03-16 23:29:08] [107] "upper_arm_speed_mag_maxhss_x"          "upper_arm_speed_mag_stride_max_velo_x"
+
+[2025-03-16 23:29:08] [109] "x_factor_hs_x"                         "x_factor_hs_y"                        
+
+[2025-03-16 23:29:08] [111] "x_factor_hs_z"                         "max_cog_velo_x"                       
+
+[2025-03-16 23:29:08] [113] "pitch"                                 "strike_zone"                          
+
+[2025-03-16 23:29:08] [115] "bearing"                               "vertical_distance"                    
+
+[2025-03-16 23:29:08] [117] "horizontal_distance"                   "poi_x"                                
+
+[2025-03-16 23:29:08] [119] "poi_y"                                 "poi_z"                                
+
+[2025-03-16 23:29:08] [121] "pitch_angle"                          
+

@@ -1,0 +1,30 @@
+[2025-03-17 18:24:39] 🚀 Starting EV Model Evaluation...
+
+[2025-03-17 18:24:39] ✅ Base EV Model Loaded.
+
+[2025-03-17 18:24:39] ✅ Advanced EV Model Loaded.
+
+[2025-03-17 18:24:41] 📊 Calculating evaluation metrics...
+
+[2025-03-17 18:24:41] ✅ EV Model Evaluation Metrics Saved.
+
+[2025-03-17 18:24:41] 📊 Generating trace plots...
+
+[2025-03-17 18:24:41] ✅ Valid Parameters in Base EV Model:
+
+[2025-03-17 18:24:41] ✅ Valid Parameters in Advanced EV Model:
+
+[2025-03-17 18:24:41] ✅ Final Non-User Parameters for Base Model:
+
+[2025-03-17 18:24:41] ✅ Final Non-User Parameters for Advanced Model:
+
+[2025-03-17 18:25:13] ✅ Filtered trace plots (excluding user effects and invalid parameters) saved.
+
+[2025-03-17 18:25:13] 📊 Checking Rhat & ESS diagnostics...
+
+[2025-03-17 18:25:13] 📊 Running posterior predictive checks...
+
+[2025-03-17 18:25:14] ✅ Posterior Predictive Checks saved.
+
+[2025-03-17 18:25:14] 🎉 EV Model Evaluation Completed Successfully!
+

@@ -1,0 +1,30 @@
+[2025-03-17 17:37:08] 🚀 Starting LA Model Evaluation...
+
+[2025-03-17 17:37:08] ✅ Base LA Model Loaded.
+
+[2025-03-17 17:37:08] ✅ Advanced LA Model Loaded.
+
+[2025-03-17 17:37:12] 📊 Calculating evaluation metrics...
+
+[2025-03-17 17:37:12] ✅ LA Model Evaluation Metrics Saved.
+
+[2025-03-17 17:37:12] 📊 Generating trace plots...
+
+[2025-03-17 17:37:12] ✅ Valid Parameters in Base LA Model:
+
+[2025-03-17 17:37:12] ✅ Valid Parameters in Advanced LA Model:
+
+[2025-03-17 17:37:12] ✅ Final Non-User Parameters for Base Model:
+
+[2025-03-17 17:37:12] ✅ Final Non-User Parameters for Advanced Model:
+
+[2025-03-17 17:37:48] ✅ Filtered trace plots (excluding user effects and invalid parameters) saved.
+
+[2025-03-17 17:37:48] 📊 Checking Rhat & ESS diagnostics...
+
+[2025-03-17 17:37:48] 📊 Running posterior predictive checks...
+
+[2025-03-17 17:37:49] ✅ Posterior Predictive Checks saved.
+
+[2025-03-17 17:37:49] 🎉 LA Model Evaluation Completed Successfully!
+

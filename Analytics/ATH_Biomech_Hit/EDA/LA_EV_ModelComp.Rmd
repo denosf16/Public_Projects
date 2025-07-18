@@ -1,0 +1,1662 @@
+---
+title: "wOBACON_Pred"
+output: html_document
+date: "2025-02-08"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages("kableExtra")
+```
+
+```{r}
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+library(naniar)
+library(missRanger)
+library(VIM)
+library(dplyr)
+library(factoextra)
+library(stringr)
+library(cluster)
+library(dendextend)
+library(rstanarm)
+library(tidyverse)
+library(mgcv)
+library(loo)
+library(knitr)
+library(bayesplot)
+library(gridExtra)
+library(scam)
+library(isotone)
+library(Metrics)
+library(tibble)
+library(randomForest)
+library(minerva)
+library(dbscan)
+library(Hmisc)
+library(knitr)
+library(kableExtra)
+```
+
+```{r}
+# 🔹 **Initialize a Logging Table**
+project_logging <- tibble(
+  Step = character(),
+  Description = character(),
+  Timestamp = as.POSIXct(character())
+)
+
+# 🔹 **Function to Log Changes**
+log_changes <- function(step, description) {
+  # Check if the message already exists in project_logging
+  if (!any(project_logging$Step == step & project_logging$Description == description)) {
+    project_logging <<- bind_rows(project_logging, tibble(
+      Step = step,
+      Description = description,
+      Timestamp = Sys.time()
+    ))
+  }
+}
+
+# 🔹 **Load CSV Files (No Type Enforcement Yet)**
+hitter_metadata <- read_csv("https://raw.githubusercontent.com/drivelineresearch/openbiomechanics/main/baseball_hitting/data/metadata.csv", show_col_types = FALSE)
+log_changes("Data Load", "Loaded hitter_metadata.")
+
+hitter_poi <- read_csv("https://raw.githubusercontent.com/drivelineresearch/openbiomechanics/main/baseball_hitting/data/poi/poi_metrics.csv", show_col_types = FALSE)
+log_changes("Data Load", "Loaded hitter_poi.")
+
+hitter_hittrax <- read_csv("https://raw.githubusercontent.com/drivelineresearch/openbiomechanics/main/baseball_hitting/data/poi/hittrax.csv", show_col_types = FALSE)
+log_changes("Data Load", "Loaded hitter_hittrax.")
+
+# 🔹 **Ensure `session_swing` is Character Before Join**
+hitter_metadata <- hitter_metadata %>% mutate(session_swing = as.character(session_swing))
+hitter_poi <- hitter_poi %>% mutate(session_swing = as.character(session_swing))
+hitter_hittrax <- hitter_hittrax %>% mutate(session_swing = as.character(session_swing))
+log_changes("Data Cleaning", "Converted session_swing to character type in all datasets.")
+
+# 🔹 **Join Datasets First (Prevents Missing Columns in Later Steps)**
+hitter_combined <- hitter_metadata %>%
+  full_join(hitter_poi, by = "session_swing") %>%
+  full_join(hitter_hittrax, by = "session_swing") %>%
+  arrange(session_swing)
+log_changes("Data Merge", "Performed full outer join on session_swing.")
+
+# 🔹 **Fix `.x` and `.y` Columns (Merge Instead of Dropping Data)**
+cols_x <- grep("\\.x$", names(hitter_combined), value = TRUE)
+cols_y <- gsub("\\.x$", ".y", cols_x)
+
+for (i in seq_along(cols_x)) {
+  col_x <- cols_x[i]
+  col_y <- cols_y[i]
+  col_original <- gsub("\\.x$", "", col_x)
+
+  if (col_y %in% names(hitter_combined)) {
+    hitter_combined <- hitter_combined %>%
+      mutate(
+        across(all_of(c(col_x, col_y)), as.numeric),  # Convert to numeric before merging
+        !!col_original := coalesce(!!sym(col_x), !!sym(col_y))  # Merge values
+      ) %>%
+      select(-all_of(c(col_x, col_y)))  # Drop old `.x` and `.y` columns
+
+    log_changes("Data Cleaning", paste("Merged", col_x, "and", col_y, "into", col_original))
+  }
+}
+
+# 🔹 **Ensure Key Numeric Columns Are Set Correctly**
+numeric_columns <- c("la", "dist", "bearing", "poi_x", "poi_y", "poi_z", 
+                     "pitch_angle", "blast_bat_speed_mph_x", "exit_velo_mph_x")
+
+hitter_combined <- hitter_combined %>%
+  mutate(across(all_of(numeric_columns), as.numeric))
+log_changes("Data Cleaning", "Converted all numeric columns to numeric.")
+
+# 🔹 **Detect & Convert Exact Zero Machine Malfunctions to `NA`**
+detect_exact_zeros <- function(df, threshold = 2) {  # If >2% of values are exactly 0
+  zero_percentages <- sapply(df, function(col) mean(col == 0, na.rm = TRUE) * 100)  # Count exact zero %
+  flagged_columns <- names(zero_percentages[zero_percentages > threshold])  # Only flag where >threshold%
+  
+  return(data.frame(Column = flagged_columns, Zero_Percentage = zero_percentages[flagged_columns]))
+}
+
+exact_zero_issues <- detect_exact_zeros(hitter_combined %>% select_if(is.numeric))
+
+print("🚨 Columns with High Exact Zero Percentages (Likely Malfunctions) 🚨")
+print(exact_zero_issues)
+
+# Convert all identified zero-heavy columns to NA
+for (col in exact_zero_issues$Column) {
+  hitter_combined[[col]] <- ifelse(hitter_combined[[col]] == 0, NA, hitter_combined[[col]])
+  log_changes("Data Cleaning", paste("Converted exact zero values to NA in", col))
+}
+
+# 🔹 **Final Data Type Check**
+cat("\n=== FINAL COLUMN TYPES ===\n")
+print(sapply(hitter_combined, class))
+
+# 🔹 **Log Completion**
+log_changes("Data Cleaning", "Final dataset is clean and ready for imputation.")
+cat("\n✅ Data Cleaning Complete! 🚀 Ready for Imputation & Analysis.\n")
+```
+
+```{r}
+hitter_combined <- hitter_combined %>%
+  mutate(across(c(exit_velo_mph_x, la, poi_z, attack_angle_contact_x, bat_speed_mph_contact_x), 
+                ~ ifelse(. > quantile(., 0.99, na.rm = TRUE) | . < quantile(., 0.01, na.rm = TRUE), NA, .)))
+log_changes("Data Cleaning", "Removed extreme outliers before imputation.")
+
+# 🔹 **Track Rows That Will Be Imputed**
+hitter_combined <- hitter_combined %>%
+  mutate(imputed = ifelse(rowSums(is.na(select(., all_of(numeric_columns)))) > 0, 1, 0))
+
+log_changes("Data Prep", "Created 'imputed' column to track imputation cases.")
+
+# 🔹 **Log Number of Missing Values Before Imputation**
+missing_values_before <- colSums(is.na(hitter_combined[numeric_columns]))
+
+log_changes("Data Check", paste("Missing values before imputation:", 
+                                paste(names(missing_values_before), missing_values_before, sep = "=", collapse = ", ")))
+
+# 🔹 **Perform Imputation Using `missRanger`**
+h_rf_imputed <- missRanger(
+  data = hitter_combined,
+  vars = numeric_columns,
+  verbose = TRUE
+) %>%
+  mutate(across(all_of(numeric_columns), as.numeric))  # Ensure columns remain numeric post-imputation
+
+log_changes("Imputation", paste("Performed imputation on:", paste(numeric_columns, collapse = ", ")))
+
+# 🔹 **Check for Missing Values After Imputation**
+missing_values_after <- colSums(is.na(h_rf_imputed[numeric_columns]))
+
+log_changes("Data Check", paste("Missing values after imputation:", 
+                                paste(names(missing_values_after), missing_values_after, sep = "=", collapse = ", ")))
+
+# 🔹 **Summary of Imputed Columns**
+cat("\n=== SUMMARY OF IMPUTED COLUMNS ===\n")
+print(summary(h_rf_imputed[numeric_columns]))
+
+log_changes("Data Summary", "Generated summary statistics for imputed variables.")
+
+# 🔹 **Plot Distributions of Key Imputed Variables**
+ggplot(h_rf_imputed, aes(x = blast_bat_speed_mph_x)) +
+  geom_histogram(binwidth = 1, fill = "blue", alpha = 0.7) +
+  labs(title = "Imputed Blast Bat Speed Distribution", 
+       x = "Blast Bat Speed (mph)", 
+       y = "Frequency") +
+  theme_minimal()
+
+log_changes("Visualization", "Plotted histogram for blast_bat_speed_mph_x after imputation.")
+
+ggplot(h_rf_imputed, aes(x = exit_velo_mph_x)) +
+  geom_histogram(binwidth = 1, fill = "green", alpha = 0.7) +
+  labs(title = "Imputed Exit Velocity Distribution", 
+       x = "Exit Velocity (mph)", 
+       y = "Frequency") +
+  theme_minimal()
+
+log_changes("Visualization", "Plotted histogram for exit_velo_mph_x after imputation.")
+
+# 🔹 **Log Final Results**
+cat("\n=== LOGGED CHANGES ===\n")
+```
+
+```{r}
+# 🔹 **Function to Detect Outliers Using Z-Score (3+ SD from Mean)**
+detect_z_outliers <- function(x) {
+  z_scores <- (x - mean(x, na.rm = TRUE)) / sd(x, na.rm = TRUE)
+  return(abs(z_scores) > 3)  # Flag values >3 SD away
+}
+
+# 🔹 **Apply Outlier Detection to Key Variables**
+h_rf_imputed <- h_rf_imputed %>%
+  mutate(
+    exit_velo_outlier = detect_z_outliers(exit_velo_mph_x),
+    la_outlier = detect_z_outliers(la),
+    poi_z_outlier = detect_z_outliers(poi_z)
+  )
+
+# 🔹 **Log Number of Outliers Detected**
+outlier_counts <- colSums(h_rf_imputed[, c("exit_velo_outlier", "la_outlier", "poi_z_outlier")], na.rm = TRUE)
+
+log_changes("Outlier Detection", paste("Detected outliers - Exit Velo:", outlier_counts["exit_velo_outlier"], 
+                                       ", Launch Angle:", outlier_counts["la_outlier"], 
+                                       ", poi_z:", outlier_counts["poi_z_outlier"]))
+
+# 🔹 **Filter Only Rows With Outliers for Inspection**
+outlier_rows <- h_rf_imputed %>%
+  filter(exit_velo_outlier | la_outlier | poi_z_outlier)
+
+# 🔹 **Log Which Rows Had Outliers**
+log_changes("Outlier Detection", paste("Total Outlier Rows Found:", nrow(outlier_rows)))
+
+# 🔹 **Print Summary of Outliers**
+print("🚨 Potential Statistical Outliers Detected 🚨")
+print(outlier_rows)
+
+# 🔹 **Visualize Outliers (Post-Imputation)**
+ggplot(h_rf_imputed, aes(x = exit_velo_mph_x)) +
+  geom_histogram(binwidth = 1, fill = "blue", alpha = 0.7) +
+  labs(title = "Exit Velocity Distribution (With Outliers)", 
+       x = "Exit Velocity (mph)", 
+       y = "Frequency") +
+  theme_minimal()
+
+log_changes("Visualization", "Plotted histogram for exit_velo_mph_x (outlier detection).")
+
+ggplot(h_rf_imputed, aes(x = la)) +
+  geom_histogram(binwidth = 2, fill = "red", alpha = 0.7) +
+  labs(title = "Launch Angle Distribution (With Outliers)", 
+       x = "Launch Angle (°)", 
+       y = "Frequency") +
+  theme_minimal()
+
+log_changes("Visualization", "Plotted histogram for la (outlier detection).")
+
+ggplot(h_rf_imputed, aes(x = poi_z)) +
+  geom_histogram(binwidth = 1, fill = "green", alpha = 0.7) +
+  labs(title = "POI_Z Distribution (With Outliers)", 
+       x = "Point of Impact Z", 
+       y = "Frequency") +
+  theme_minimal()
+
+log_changes("Visualization", "Plotted histogram for poi_z (outlier detection).")
+
+# 🔹 **Log Completion**
+cat("\n=== LOGGED CHANGES ===\n")
+```
+
+```{r}
+# 🔹 **Log Summary Statistics Before Plotting**
+summary_exit_velo <- summary(h_rf_imputed$exit_velo_mph_x)
+summary_la <- summary(h_rf_imputed$la)
+
+log_changes("Summary Stats", paste("Exit Velocity Summary:", paste(names(summary_exit_velo), summary_exit_velo, sep = "=", collapse = ", ")))
+log_changes("Summary Stats", paste("Launch Angle Summary:", paste(names(summary_la), summary_la, sep = "=", collapse = ", ")))
+
+# 🔹 **Histogram for Exit Velocity**
+ggplot(h_rf_imputed, aes(x = exit_velo_mph_x)) +
+  geom_histogram(binwidth = 2, fill = "blue", alpha = 0.7) +
+  labs(title = "Exit Velocity Distribution", 
+       x = "Exit Velocity (mph)", 
+       y = "Frequency") +
+  theme_minimal()
+
+log_changes("Visualization", "Plotted histogram for exit_velo_mph_x.")
+
+# 🔹 **Histogram for Launch Angle**
+ggplot(h_rf_imputed, aes(x = la)) +
+  geom_histogram(binwidth = 2, fill = "red", alpha = 0.7) +
+  labs(title = "Launch Angle Distribution", 
+       x = "Launch Angle (°)", 
+       y = "Frequency") +
+  theme_minimal()
+
+log_changes("Visualization", "Plotted histogram for la.")
+
+# 🔹 **Boxplot for Exit Velocity**
+ggplot(h_rf_imputed, aes(y = exit_velo_mph_x)) +
+  geom_boxplot(fill = "blue", alpha = 0.5) +
+  labs(title = "Boxplot of Exit Velocity", 
+       y = "Exit Velocity (mph)") +
+  theme_minimal()
+
+log_changes("Visualization", "Plotted boxplot for exit_velo_mph_x.")
+
+# 🔹 **Boxplot for Launch Angle**
+ggplot(h_rf_imputed, aes(y = la)) +
+  geom_boxplot(fill = "red", alpha = 0.5) +
+  labs(title = "Boxplot of Launch Angle", 
+       y = "Launch Angle (°)") +
+  theme_minimal()
+
+log_changes("Visualization", "Plotted boxplot for la.")
+
+# 🔹 **Log Completion**
+cat("\n=== LOGGED CHANGES ===\n")
+```
+
+```{r}
+# 🔹 **Compute & Log Correlation Between Exit Velocity & Launch Angle**
+correlation_value <- cor(h_rf_imputed$la, h_rf_imputed$exit_velo_mph_x, use = "complete.obs")
+log_changes("Correlation Analysis", paste("Correlation between la and exit_velo_mph_x:", round(correlation_value, 3)))
+
+# 🔹 **Scatterplot with LOESS Non-Linear Smoothing**
+ggplot(h_rf_imputed, aes(x = la, y = exit_velo_mph_x)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  geom_smooth(method = "loess", color = "red", se = TRUE) +  # LOESS instead of LM
+  labs(title = "Exit Velocity vs. Launch Angle (LOESS Smoothing)",
+       x = "Launch Angle (°)",
+       y = "Exit Velocity (mph)") +
+  theme_minimal()
+
+log_changes("Visualization", "Plotted scatterplot with LOESS smoothing for la vs. exit_velo_mph_x.")
+
+# 🔹 **Hexbin Plot to Show Density**
+ggplot(h_rf_imputed, aes(x = la, y = exit_velo_mph_x)) +
+  geom_hex(bins = 30) +
+  labs(title = "Density of Exit Velocity vs. Launch Angle",
+       x = "Launch Angle (°)",
+       y = "Exit Velocity (mph)") +
+  theme_minimal()
+
+log_changes("Visualization", "Plotted hexbin density plot for la vs. exit_velo_mph_x.")
+
+# 🔹 **Log Completion**
+cat("\n=== LOGGED CHANGES ===\n")
+```
+
+```{r}
+# 🔹 **Select Only Numeric Columns**
+numeric_data <- h_rf_imputed %>% select_if(is.numeric)
+
+# 🔹 **Compute Correlation Matrix**
+cor_matrix <- cor(numeric_data, use = "complete.obs")
+
+# 🔹 **Set Correlation Threshold & Extract Highly Correlated Variables**
+cor_threshold <- 0.15  # Adjust based on sensitivity
+
+high_corr_vars_exit_velo <- rownames(cor_matrix)[cor_matrix["exit_velo_mph_x", ] > cor_threshold | 
+                                                  cor_matrix["exit_velo_mph_x", ] < -cor_threshold]
+
+high_corr_vars_la <- rownames(cor_matrix)[cor_matrix["la", ] > cor_threshold | 
+                                          cor_matrix["la", ] < -cor_threshold]
+
+log_changes("Correlation Analysis", paste("Threshold:", cor_threshold, 
+                                          " | Exit Velo High Correlation Vars:", paste(high_corr_vars_exit_velo, collapse = ", "), 
+                                          " | Launch Angle High Correlation Vars:", paste(high_corr_vars_la, collapse = ", ")))
+
+# 🔹 **Generate Heatmaps Only if Correlated Variables Exist**
+if (length(high_corr_vars_exit_velo) > 1) {
+  corrplot(cor_matrix[high_corr_vars_exit_velo, high_corr_vars_exit_velo], 
+           method = "color", tl.cex = 0.8, title = "Correlation Heatmap - Exit Velocity")
+  log_changes("Visualization", "Plotted correlation heatmap for exit_velo_mph_x.")
+} else {
+  log_changes("Visualization", "Skipped correlation heatmap for exit_velo_mph_x (insufficient correlated variables).")
+}
+
+if (length(high_corr_vars_la) > 1) {
+  corrplot(cor_matrix[high_corr_vars_la, high_corr_vars_la], 
+           method = "color", tl.cex = 0.8, title = "Correlation Heatmap - Launch Angle")
+  log_changes("Visualization", "Plotted correlation heatmap for la.")
+} else {
+  log_changes("Visualization", "Skipped correlation heatmap for la (insufficient correlated variables).")
+}
+
+# 🔹 **Log Completion**
+cat("\n=== LOGGED CHANGES ===\n")
+```
+
+```{r}
+# 🔹 Define variables to exclude (but keep exit_velo_mph_x and la for feature analysis)
+exclude_vars <- c("dist", "session_height_in", "session_mass_lbs", 
+                  "bat_weight_oz", "bat_length_in", "pitch", "strike_zone")
+
+# 🔹 Remove excluded variables from high-correlation predictor lists
+high_corr_vars_exit_velo <- setdiff(high_corr_vars_exit_velo, exclude_vars)
+high_corr_vars_la <- setdiff(high_corr_vars_la, exclude_vars)
+
+# 🔹 **Train Random Forest Model for Exit Velocity**
+if (length(high_corr_vars_exit_velo) > 1) {
+  rf_exit_velo <- randomForest(
+    exit_velo_mph_x ~ ., 
+    data = na.omit(h_rf_imputed %>% select(exit_velo_mph_x, all_of(high_corr_vars_exit_velo))), 
+    importance = TRUE, ntree = 2500
+  )
+  
+  # Extract Feature Importance
+  importance_exit_velo <- importance(rf_exit_velo)
+  importance_exit_velo_df <- data.frame(
+    Variable = rownames(importance_exit_velo),
+    Importance = importance_exit_velo[, "IncNodePurity"]
+  )
+
+  log_changes("Random Forest", paste("Re-trained RF model for exit_velo_mph_x"))
+
+  # 🔹 **Ensure importance values exist before plotting**
+  if (nrow(importance_exit_velo_df) > 0 && sum(importance_exit_velo_df$Importance) > 0) {
+    print("🔍 Rechecking RF Feature Importance for Exit Velo (No dist):")
+    print(importance_exit_velo_df)  # Debugging
+    
+    # 🔹 **Plot feature importance**
+    p_exit_velo <- ggplot(importance_exit_velo_df, aes(x = reorder(Variable, Importance), y = Importance)) +
+      geom_bar(stat = "identity", fill = "blue") +
+      coord_flip() +
+      labs(title = "Feature Importance - Exit Velocity (No dist)",
+           x = "Variable",
+           y = "Importance (IncNodePurity)") +
+      theme_minimal()
+    
+    print(p_exit_velo)  # Force ggplot to render
+    
+    log_changes("Visualization", "Plotted updated feature importance for exit_velo_mph_x.")
+  } else {
+    log_changes("Visualization", "No meaningful feature importance found for exit_velo_mph_x after removing dist.")
+  }
+} else {
+  log_changes("Random Forest", "Skipped RF training for exit_velo_mph_x (insufficient predictor variables).")
+}
+
+# 🔹 **Train Random Forest Model for Launch Angle (Without "dist")**
+if (length(high_corr_vars_la) > 1) {
+  rf_la <- randomForest(
+    la ~ ., 
+    data = na.omit(h_rf_imputed %>% select(la, all_of(high_corr_vars_la))), 
+    importance = TRUE, ntree = 2500
+  )
+  
+  # Extract Feature Importance
+  importance_la <- importance(rf_la)
+  importance_la_df <- data.frame(
+    Variable = rownames(importance_la),
+    Importance = importance_la[, "IncNodePurity"]
+  )
+
+  log_changes("Random Forest", paste("Re-trained RF model for la (excluded dist)."))
+
+  # 🔹 **Ensure importance values exist before plotting**
+  if (nrow(importance_la_df) > 0 && sum(importance_la_df$Importance) > 0) {
+    print("🔍 Rechecking RF Feature Importance for LA (No dist):")
+    print(importance_la_df)  # Debugging
+    
+    # 🔹 **Plot feature importance**
+    p_la <- ggplot(importance_la_df, aes(x = reorder(Variable, Importance), y = Importance)) +
+      geom_bar(stat = "identity", fill = "red") +
+      coord_flip() +
+      labs(title = "Feature Importance - Launch Angle (No dist)",
+           x = "Variable",
+           y = "Importance (IncNodePurity)") +
+      theme_minimal()
+    
+    print(p_la)  # Force ggplot to render
+    
+    log_changes("Visualization", "Plotted updated feature importance for la.")
+  } else {
+    log_changes("Visualization", "No meaningful feature importance found for la after removing dist.")
+  }
+} else {
+  log_changes("Random Forest", "Skipped RF training for la (insufficient predictor variables).")
+}
+
+```
+
+```{r}
+# Compute MIC for exit velocity
+mic_results_exit_velo <- apply(h_rf_imputed %>% select(all_of(high_corr_vars_exit_velo)), 2, function(x) mine(x, h_rf_imputed$exit_velo_mph_x)$MIC)
+
+# Compute MIC for launch angle
+mic_results_la <- apply(h_rf_imputed %>% select(all_of(high_corr_vars_la)), 2, function(x) mine(x, h_rf_imputed$la)$MIC)
+
+# Convert to dataframes
+mic_exit_velo_df <- data.frame(Variable = names(mic_results_exit_velo), MIC = mic_results_exit_velo)
+mic_la_df <- data.frame(Variable = names(mic_results_la), MIC = mic_results_la)
+
+# Plot MIC results
+ggplot(mic_exit_velo_df, aes(x = reorder(Variable, MIC), y = MIC)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +
+  labs(title = "MIC Score - Exit Velocity",
+       x = "Variable",
+       y = "MIC Score") +
+  theme_minimal()
+
+ggplot(mic_la_df, aes(x = reorder(Variable, MIC), y = MIC)) +
+  geom_bar(stat = "identity", fill = "red") +
+  coord_flip() +
+  labs(title = "MIC Score - Launch Angle",
+       x = "Variable",
+       y = "MIC Score") +
+  theme_minimal()
+```
+
+```{r}
+# 🔹 Ensure predictor variables do not include the target variable
+high_corr_vars_exit_velo <- setdiff(high_corr_vars_exit_velo, "exit_velo_mph_x")
+
+# Loop through each predictor and generate scatterplots
+for (var in high_corr_vars_exit_velo) {
+  p <- ggplot(h_rf_imputed, aes_string(x = var, y = "exit_velo_mph_x")) +
+    geom_point(alpha = 0.6, color = "blue") +  # Scatterplot points
+    geom_smooth(method = "loess", color = "red", se = FALSE, linetype = "solid") +  # LOESS trendline
+    geom_smooth(method = "lm", color = "black", se = FALSE, linetype = "dashed") +  # Linear regression trendline
+    labs(title = paste("Scatterplot of", var, "vs Exit Velocity"),
+         x = var,
+         y = "Exit Velocity (mph)") +
+    theme_minimal()
+  
+  print(p)  # Display the plot
+}
+
+```
+
+```{r}
+# 🔹 Ensure predictor variables do not include the target variable
+high_corr_vars_la <- setdiff(high_corr_vars_la, "la")
+
+# Loop through each predictor and generate scatterplots
+for (var in high_corr_vars_la) {
+  p <- ggplot(h_rf_imputed, aes_string(x = var, y = "la")) +
+    geom_point(alpha = 0.6, color = "blue") +  # Scatterplot points
+    geom_smooth(method = "loess", color = "red", se = FALSE, linetype = "solid") +  # LOESS trendline
+    geom_smooth(method = "lm", color = "black", se = FALSE, linetype = "dashed") +  # Linear regression trendline
+    labs(title = paste("Scatterplot of", var, "vs Launch Angle"),
+         x = var,
+         y = "Launch Angle (degrees)") +
+    theme_minimal()
+  
+  print(p)  # Display the plot
+}
+```
+
+```{r}
+# 🔹 **Log Step Function (Using Existing `log_changes()`)**
+log_changes("Start", "🔹 Beginning MIC & Pearson correlation calculations.")
+
+# Define predictor variables (excluding response variable)
+exit_velo_predictors <- high_corr_vars_exit_velo
+launch_angle_predictors <- high_corr_vars_la
+
+# Compute MIC for Exit Velocity Predictors (Predictor-Predictor)
+mic_exit_velo <- mine(na.omit(h_rf_imputed %>% select(all_of(exit_velo_predictors))))$MIC
+pearson_exit_velo <- rcorr(as.matrix(na.omit(h_rf_imputed %>% select(all_of(exit_velo_predictors)))))$r
+
+# Compute MIC for Launch Angle Predictors (Predictor-Predictor)
+mic_launch_angle <- mine(na.omit(h_rf_imputed %>% select(all_of(launch_angle_predictors))))$MIC
+pearson_launch_angle <- rcorr(as.matrix(na.omit(h_rf_imputed %>% select(all_of(launch_angle_predictors)))))$r
+
+log_changes("Compute Metrics", "🔹 MIC & Pearson computations completed.")
+```
+
+```{r}
+# Convert MIC & Pearson Matrices to DataFrames
+convert_to_df <- function(mic_matrix, pearson_matrix) {
+  mic_df <- as.data.frame(as.table(mic_matrix)) %>% rename(Var1 = Var1, Var2 = Var2, MIC = Freq)
+  pearson_df <- as.data.frame(as.table(pearson_matrix)) %>% rename(Var1 = Var1, Var2 = Var2, Pearson = Freq)
+  left_join(mic_df, pearson_df, by = c("Var1", "Var2"))
+}
+
+exit_velo_results <- convert_to_df(mic_exit_velo, pearson_exit_velo)
+launch_angle_results <- convert_to_df(mic_launch_angle, pearson_launch_angle)
+
+log_changes("Merge DataFrames", "🔹 MIC & Pearson DataFrames merged.")
+
+# Function to compute MIC & Pearson correlation between predictors and the response variable
+compute_response_relationship <- function(predictors, response_var) {
+  results <- lapply(predictors, function(var) {
+    # Compute MIC only between the predictor and the response
+    mic_value <- mine(na.omit(h_rf_imputed %>% select(all_of(c(var, response_var)))))$MIC[1, 2]
+
+    # Compute Pearson correlation between predictor and response
+    pearson_value <- cor(h_rf_imputed[[var]], h_rf_imputed[[response_var]], use = "complete.obs")
+
+    # Return a formatted row
+    data.frame(Var1 = var, MIC = round(mic_value, 3), Pearson = round(pearson_value, 3))
+  })
+
+  # Combine results and ensure uniqueness
+  df <- bind_rows(results) %>%
+    filter(MIC >= 0.2 & abs(Pearson) <= 0.4)  # ✅ Select nonlinear candidates
+
+  return(df)
+}
+
+# Compute Response-Predictor relationships for nonlinear terms
+exit_velo_nonlinear <- compute_response_relationship(exit_velo_predictors, "exit_velo_mph_x")
+launch_angle_nonlinear <- compute_response_relationship(launch_angle_predictors, "la")
+
+
+log_changes("Compute Response-Predictor", "🔹 Identified nonlinear term candidates.")
+
+# 🔹 Filter Predictor-Predictor Relationships for Interaction & Multicollinearity
+exit_velo_interactions <- exit_velo_results %>%
+  filter(MIC >= 0.2 & MIC <= 0.5 | MIC <= 0.6) %>%
+  filter(Pearson >= 0.4 & Pearson <= 0.6) %>%
+  filter(Var1 != Var2)  # ✅ Selecting interaction term candidates
+
+launch_angle_interactions <- launch_angle_results %>%
+  filter(MIC >= 0.2 & MIC <= 0.5 | MIC <= 0.6) %>%
+  filter(Pearson >= 0.4 & Pearson <= 0.6) %>%
+  filter(Var1 != Var2)  # ✅ Selecting interaction term candidates
+
+exit_velo_multicollinear <- exit_velo_results %>%
+  filter(abs(Pearson) >= 0.7) %>%
+  filter(Var1 != Var2)  # ✅ Selecting multicollinear variable pairs
+
+launch_angle_multicollinear <- launch_angle_results %>%
+  filter(abs(Pearson) >= 0.7) %>%
+  filter(Var1 != Var2)  # ✅ Selecting multicollinear variable pairs
+
+log_changes("Filtering", "🔹 Tables filtered for interaction, nonlinear, and multicollinear variables.")
+
+# 🔹 Remove Self-Correlations & Mirrored Pairs
+remove_duplicate_pairs <- function(df) {
+  df %>%
+    mutate(
+      Var1 = as.character(Var1),
+      Var2 = as.character(Var2),
+      Var_low = ifelse(Var1 < Var2, Var1, Var2),
+      Var_high = ifelse(Var1 < Var2, Var2, Var1)
+    ) %>%
+    filter(Var_low != Var_high) %>%  # Remove self-correlations
+    distinct(Var_low, Var_high, .keep_all = TRUE) %>%  # Keep only unique pairs
+    select(-Var1, -Var2) %>%  # Drop old columns
+    rename(Var1 = Var_low, Var2 = Var_high) %>%  # Rename back
+    select(Var1, Var2, MIC, Pearson)  # Reorder columns
+}
+
+# Apply duplicate removal
+exit_velo_interactions <- remove_duplicate_pairs(exit_velo_interactions)
+launch_angle_interactions <- remove_duplicate_pairs(launch_angle_interactions)
+exit_velo_multicollinear <- remove_duplicate_pairs(exit_velo_multicollinear)
+launch_angle_multicollinear <- remove_duplicate_pairs(launch_angle_multicollinear)
+
+log_changes("Remove Duplicates", "🔹 Removed duplicate and self-correlated pairs.")
+
+# 🔹 Function to Display Tables
+display_table <- function(df, title) {
+  if (nrow(df) > 0) {
+    log_changes("Table Display", paste("🔹 Displaying", title))
+    df %>%
+      kable("html", caption = title) %>%
+      kable_styling(full_width = FALSE, position = "center", bootstrap_options = c("striped", "hover"))
+  } else {
+    log_changes("Table Display", paste("⚠️ No significant", title, "found."))
+  }
+}
+
+# 🔹 Display Tables
+display_table(exit_velo_interactions, "Exit Velocity Interaction Candidates")
+display_table(exit_velo_nonlinear, "Exit Velocity Nonlinear Term Candidates")
+display_table(exit_velo_multicollinear, "Exit Velocity Multicollinear Variables")
+
+display_table(launch_angle_interactions, "Launch Angle Interaction Candidates")
+display_table(launch_angle_nonlinear, "Launch Angle Nonlinear Term Candidates")
+display_table(launch_angle_multicollinear, "Launch Angle Multicollinear Variables")
+
+log_changes("Complete", "✅ Analysis complete!")
+
+```
+
+
+
+```{r}
+options(mc.cores = parallel::detectCores())
+
+# 🔹 **Ensure Data Types Are Correct**
+h_rf_imputed <- h_rf_imputed %>%
+  mutate(
+    hitter_side = as.factor(hitter_side),  # Ensure categorical variable
+    user = as.factor(user),  # Random effect grouping factor
+    dist_scaled = scale(dist)  # Scale numeric variable
+  )
+
+log_changes("Data Prep", "Converted hitter_side and user to factors, scaled dist.")
+
+# 🔹 **Run `stan_gamm4` Model 1**
+launch_angle_mod1 <- stan_gamm4(
+  la ~ dist_scaled + hitter_side + s(user, bs = "re"),
+  family = gaussian(),
+  data = na.omit(h_rf_imputed),  
+  chains = 4, iter = 4000, cores = 4
+)
+
+log_changes("Modeling", "Trained `stan_gamm4` model 1 (launch angle with dist_scaled and hitter_side).")
+
+# 🔹 **Log Completion**
+cat("\n=== LOGGED CHANGES ===\n")
+print(project_logging)
+
+```
+
+```{r}
+# Scatterplots with Loess Trend Lines
+ggplot(h_rf_imputed, aes(x = attack_angle_contact_x, y = la)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", color = "red") +
+  labs(title = "Launch Angle vs. Attack Angle")
+
+ggplot(h_rf_imputed, aes(x = pitch_angle, y = la)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", color = "red") +
+  labs(title = "Launch Angle vs. Pitch Angle")
+
+ggplot(h_rf_imputed, aes(x = poi_y, y = la)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", color = "red") +
+  labs(title = "Launch Angle vs. Point of Impact Y")
+
+ggplot(h_rf_imputed, aes(x = dist, y = la)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", color = "red") +
+  labs(title = "Launch Angle vs. Distance")
+```
+
+```{r}
+ggplot(h_rf_imputed, aes(x = attack_angle_contact_x, y = la)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", color = "red") +
+  facet_wrap(~cut(pitch_angle, breaks = 4), scales = "free_x") +
+  labs(title = "Launch Angle vs. Attack Angle (Faceted by Pitch Angle)",
+       x = "Attack Angle",
+       y = "Launch Angle") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(h_rf_imputed, aes(x = attack_angle_contact_x, y = la, color = pitch_angle)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", color = "black") +
+  scale_color_gradient(low = "blue", high = "red") +
+  labs(title = "Launch Angle vs. Attack Angle (Colored by Pitch Angle)",
+       x = "Attack Angle",
+       y = "Launch Angle",
+       color = "Pitch Angle") +
+  theme_minimal()
+
+```
+
+```{r}
+cor_matrix <- cor(h_rf_imputed %>% select(attack_angle_contact_x, pitch_angle, poi_y, dist), use = "complete.obs")
+print(cor_matrix)
+```
+
+```{r}
+# 🔹 **Ensure Data Types Are Correct & Scale Variables**
+h_rf_imputed <- h_rf_imputed %>%
+  mutate(
+    hitter_side = as.factor(hitter_side),  # Ensure categorical variable
+    user = as.factor(user),  # Random effect grouping factor
+    dist_scaled = scale(dist),  # Scale distance
+    pitch_angle_scaled = scale(pitch_angle),  # Scale pitch angle
+    attack_angle_scaled = scale(attack_angle_contact_x),  # Scale attack angle
+    poi_y_scaled = scale(poi_y)  # Scale point of impact Y
+  )
+
+log_changes("Data Prep", "Converted hitter_side and user to factors, scaled dist, pitch_angle, attack_angle, and poi_y.")
+
+# 🔹 **Run `stan_gamm4` Model 2 with Enhanced Convergence Settings**
+launch_angle_mod2 <- stan_gamm4(
+  la ~ attack_angle_scaled + poi_y_scaled + dist_scaled + hitter_side + s(pitch_angle_scaled) + s(user, bs = "re"),
+  family = gaussian(),
+  data = na.omit(h_rf_imputed),  
+  chains = 4, 
+  iter = 6000,  # Increased iterations for better sampling
+  warmup = 2000,  # More warmup samples to stabilize estimation
+  adapt_delta = 0.99,  # Higher acceptance rate to prevent divergences
+  control = list(max_treedepth = 15),  # ✅ Correct way to set max treedepth
+  cores = 4
+)
+
+
+log_changes("Modeling", "Trained `stan_gamm4` model 2 (launch angle with attack_angle, poi_y, dist, and pitch_angle).")
+
+# 🔹 **Log Completion**
+cat("\n=== LOGGED CHANGES ===\n")
+print(project_logging)
+
+```
+
+```{r}
+# 🔹 Get fixed effect parameter names for each model
+params_mod1 <- names(fixef(launch_angle_mod1))  # Extract only existing parameters
+params_mod2 <- names(fixef(launch_angle_mod2))  # Extract only existing parameters
+
+# 🔹 Define parameters to check for each model (filtering for existing ones)
+params_to_check_mod1 <- intersect(c("(Intercept)", "dist_scaled"), params_mod1)
+params_to_check_mod2 <- intersect(c("(Intercept)", "attack_angle_scaled", "poi_y_scaled", "dist_scaled", "hitter_sideR"), params_mod2)
+
+# 🔹 Generate trace plots for Model 1 (only `dist_scaled`)
+mcmc_trace(as.array(as.matrix(launch_angle_mod1)), pars = params_to_check_mod1) + 
+  ggtitle("Trace Plot - Model 1")
+
+# 🔹 Generate trace plots for Model 2 (all selected parameters)
+mcmc_trace(as.array(as.matrix(launch_angle_mod2)), pars = params_to_check_mod2) + 
+  ggtitle("Trace Plot - Model 2")
+
+log_changes("Visualization", "Generated trace plots for available fixed effects in Model 1 & Model 2.")
+
+```
+
+```{r}
+# 🔹 Extract Stan summary for both models
+summary_mod1 <- rstan::summary(launch_angle_mod1$stanfit)$summary
+summary_mod2 <- rstan::summary(launch_angle_mod2$stanfit)$summary
+
+# 🔹 Extract only R-hat values
+rhat_values_mod1 <- summary_mod1[, "Rhat"]
+rhat_values_mod2 <- summary_mod2[, "Rhat"]
+
+# 🔹 Convert to DataFrame and sort by highest R-hat
+rhat_df_mod1 <- data.frame(coefficient = names(rhat_values_mod1), rhat = rhat_values_mod1) %>%
+  arrange(desc(rhat))
+
+rhat_df_mod2 <- data.frame(coefficient = names(rhat_values_mod2), rhat = rhat_values_mod2) %>%
+  arrange(desc(rhat))
+
+# 🔹 **Remove `s(user)` parameters**
+rhat_df_mod1_filtered <- rhat_df_mod1 %>% filter(!grepl("^s\\(user", coefficient))
+rhat_df_mod2_filtered <- rhat_df_mod2 %>% filter(!grepl("^s\\(user", coefficient))
+
+# 🔹 Print filtered `R-hat` tables
+print("🔍 Sorted R-hat Values (Filtered) - Model 1")
+print(rhat_df_mod1_filtered)
+
+print("🔍 Sorted R-hat Values (Filtered) - Model 2")
+print(rhat_df_mod2_filtered)
+
+log_changes("Diagnostics", "Filtered and extracted R-hat values for Model 1 & Model 2.")
+```
+
+```{r}
+# 🔹 Visualize R-hat values using ggplot (filtered)
+ggplot(rhat_df_mod1_filtered, aes(x = reorder(coefficient, rhat), y = rhat)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +
+  labs(title = "Filtered R-hat Values - Model 1", x = "Parameter", y = "R-hat") +
+  theme_minimal()
+
+ggplot(rhat_df_mod2_filtered, aes(x = reorder(coefficient, rhat), y = rhat)) +
+  geom_bar(stat = "identity", fill = "red") +
+  coord_flip() +
+  labs(title = "Filtered R-hat Values - Model 2", x = "Parameter", y = "R-hat") +
+  theme_minimal()
+
+log_changes("Visualization", "Plotted filtered R-hat values for Model 1 & Model 2.")
+
+```
+
+```{r}
+# Compute residuals
+residuals_mod1 <- residuals(launch_angle_mod1)
+residuals_mod2 <- residuals(launch_angle_mod2)
+
+# Residual histograms
+ggplot(data.frame(residuals_mod1), aes(x = residuals_mod1)) +
+  geom_histogram(bins = 30, fill = "blue", alpha = 0.6) +
+  ggtitle("Residuals - Model 1")
+
+ggplot(data.frame(residuals_mod2), aes(x = residuals_mod2)) +
+  geom_histogram(bins = 30, fill = "red", alpha = 0.6) +
+  ggtitle("Residuals - Model 2")
+
+log_changes("Visualization", "Generated residual histograms for Model 1 & Model 2.")
+```
+
+```{r}
+# Generate posterior predictive samples
+y_rep_mod1 <- posterior_predict(launch_angle_mod1)
+y_rep_mod2 <- posterior_predict(launch_angle_mod2)
+
+# Convert to dataframes
+df_mod1 <- data.frame(y_rep = apply(y_rep_mod1, 2, mean))
+df_mod2 <- data.frame(y_rep = apply(y_rep_mod2, 2, mean))
+
+# Posterior predictive histograms
+ggplot(df_mod1, aes(x = y_rep)) +
+  geom_histogram(bins = 30, fill = "blue", alpha = 0.6) +
+  ggtitle("Posterior Predictive - Model 1")
+
+ggplot(df_mod2, aes(x = y_rep)) +
+  geom_histogram(bins = 30, fill = "red", alpha = 0.6) +
+  ggtitle("Posterior Predictive - Model 2")
+
+log_changes("Visualization", "Generated posterior predictive histograms for Model 1 & Model 2.")
+
+```
+
+```{r}
+ggplot(data.frame(y_rep_mod1 = apply(y_rep_mod1, 2, mean), y_obs = h_rf_imputed$la), aes(x = y_obs, y = y_rep_mod1)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  ggtitle("Posterior Predictive Scatter - Model 1")
+
+ggplot(data.frame(y_rep_mod2 = apply(y_rep_mod2, 2, mean), y_obs = h_rf_imputed$la), aes(x = y_obs, y = y_rep_mod2)) +
+  geom_point(alpha = 0.5, color = "red") +
+  ggtitle("Posterior Predictive Scatter - Model 2")
+
+log_changes("Visualization", "Generated posterior predictive scatterplots for Model 1 & Model 2.")
+
+```
+
+```{r}
+waic_mod1 <- waic(launch_angle_mod1)
+waic_mod2 <- waic(launch_angle_mod2)
+
+log_changes("Model Comparison", "Computed WAIC for Model 1 & Model 2.")
+
+waic_mod1
+waic_mod2
+
+loo_mod1 <- loo(launch_angle_mod1)
+loo_mod2 <- loo(launch_angle_mod2)
+
+log_changes("Model Comparison", "Computed LOO cross-validation for Model 1 & Model 2.")
+
+loo_mod1
+loo_mod2
+
+##pareto_k_mod1 <- loo(launch_angle_mod1, k_threshold = 0.7)
+##pareto_k_mod2 <- loo(launch_angle_mod2, k_threshold = 0.7)
+
+#log_changes("Model Comparison", "Computed Pareto K diagnostics for Model 1 & Model 2.")
+
+#pareto_k_mod1
+#pareto_k_mod2
+
+```
+
+```{r}
+kfold_mod1 <- kfold(launch_angle_mod1, K = 5)
+kfold_mod2 <- kfold(launch_angle_mod2, K = 5)
+
+log_changes("Model Comparison", "Performed 5-Fold Cross-Validation for Model 1 & Model 2.")
+
+kfold_mod1
+kfold_mod2
+
+```
+
+```{r}
+# Compute predictions
+y_pred_mod1 <- posterior_predict(launch_angle_mod1)
+y_pred_mod2 <- posterior_predict(launch_angle_mod2)
+
+# Compute RMSE
+rmse_mod1 <- rmse(h_rf_imputed$la, colMeans(y_pred_mod1))
+rmse_mod2 <- rmse(h_rf_imputed$la, colMeans(y_pred_mod2))
+
+# Compute MAE
+mae_mod1 <- mae(h_rf_imputed$la, colMeans(y_pred_mod1))
+mae_mod2 <- mae(h_rf_imputed$la, colMeans(y_pred_mod2))
+
+log_changes("Model Evaluation", "Computed RMSE & MAE for Model 1 & Model 2.")
+
+# Store results
+model_comparison <- data.frame(
+  Model = c("Model 1", "Model 2"),
+  WAIC = c(waic_mod1$estimates["waic", "Estimate"], waic_mod2$estimates["waic", "Estimate"]),
+  LOO = c(loo_mod1$estimates["looic", "Estimate"], loo_mod2$estimates["looic", "Estimate"]),
+  RMSE = c(rmse_mod1, rmse_mod2),
+  MAE = c(mae_mod1, mae_mod2)
+)
+
+print(model_comparison)
+
+log_changes("Model Evaluation", "Stored model performance metrics in comparison table.")
+
+```
+
+```{r}
+ggplot(data.frame(fitted = fitted(launch_angle_mod1), residuals = residuals(launch_angle_mod1)), aes(x = fitted, y = residuals)) +
+  geom_point(alpha = 0.5, color = "red") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(title = "Residuals vs. Fitted - Model 1", x = "Fitted Values", y = "Residuals") +
+  theme_minimal()
+
+ggplot(data.frame(fitted = fitted(launch_angle_mod2), residuals = residuals(launch_angle_mod2)), aes(x = fitted, y = residuals)) +
+  geom_point(alpha = 0.5, color = "red") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(title = "Residuals vs. Fitted - Model 2", x = "Fitted Values", y = "Residuals") +
+  theme_minimal()
+```
+```{r}
+ggplot(data.frame(fitted = fitted(launch_angle_mod2), residuals = residuals(launch_angle_mod2), pitch_angle = h_rf_imputed$pitch_angle), 
+       aes(x = fitted, y = residuals, color = pitch_angle)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", color = "black") +
+  scale_color_gradient(low = "blue", high = "red") +
+  labs(title = "Residuals vs. Fitted, Colored by Pitch Angle",
+       x = "Fitted Values",
+       y = "Residuals",
+       color = "Pitch Angle") +
+  theme_minimal()
+
+```
+
+```{r}
+# 🔹 **Run `stan_gamm4` Model 1**
+exit_velo_mod1 <- stan_gamm4(
+  exit_velo_mph_x ~ bat_speed_mph_contact_x + hitter_side + s(user, bs = "re"),
+  family = gaussian(),
+  data = na.omit(h_rf_imputed),  
+  chains = 4, iter = 4000, cores = 4
+)
+
+log_changes("Modeling", "Trained `stan_gamm4` model 1 (exit velo with bat speed).")
+
+# 🔹 **Log Completion**
+cat("\n=== LOGGED CHANGES ===\n")
+print(project_logging)
+
+```
+
+```{r}
+cor_matrix2 <- cor(h_rf_imputed %>% select(exit_velo_mph_x, bat_speed_mph_contact_x, session_mass_lbs, torso_load_max_x, lead_knee_stride_max_x, pelvis_angle_fp_y, poi_z, torso_angular_velocity_fp_x, max_cog_velo_x), use = "complete.obs")
+print(cor_matrix2)
+```
+
+```{r}
+# ✅ Loop through each variable in the correlation matrix
+for (variable in colnames(cor_matrix2)) {
+  if (variable != "exit_velo_mph_x") {  # Exclude the dependent variable
+    
+    # ✅ Generate scatterplot with LOESS smoothing
+    plot <- ggplot(h_rf_imputed, aes_string(x = variable, y = "exit_velo_mph_x")) +
+      geom_point(alpha = 0.5) +
+      geom_smooth(method = "loess", color = "red") +
+      labs(title = paste("Exit Velocity vs.", variable),
+           x = variable,
+           y = "Exit Velocity (mph)") +
+      theme_minimal()
+    
+    print(plot)  # Display the plot
+  }
+}
+```
+
+
+```{r}
+# 🔹 **Run `stan_gamm4` Model 2 with Enhanced Convergence Settings**
+exit_velo_mod2 <- stan_gamm4(
+  exit_velo_mph_x ~ bat_speed_mph_contact_x + hitter_side + 
+    s(user, bs = "re") + 
+    s(torso_load_max_x) + 
+    s(lead_knee_stride_max_x) + 
+    poly(pelvis_angle_fp_y, 2) + 
+    s(poi_z) + 
+    s(torso_angular_velocity_fp_x) + 
+    max_cog_velo_x,  
+  family = gaussian(),
+  data = na.omit(h_rf_imputed),  
+  chains = 4, 
+  iter = 6000,  # Increased iterations for better sampling
+  warmup = 2000,  # More warmup samples to stabilize estimation
+  adapt_delta = 0.99,  # Higher acceptance rate to prevent divergences
+  control = list(max_treedepth = 15),  # Correct way to set max treedepth
+  cores = 4
+)
+
+```
+
+```{r}
+# 🔹 **Scale Explanatory Variables**
+h_rf_imputed <- h_rf_imputed %>%
+  mutate(
+    bat_speed_scaled = scale(bat_speed_mph_contact_x),
+    torso_load_max_scaled = scale(torso_load_max_x),
+    lead_knee_stride_max_scaled = scale(lead_knee_stride_max_x),
+    pelvis_angle_fp_scaled = scale(pelvis_angle_fp_y),
+    poi_z_scaled = scale(poi_z),
+    torso_angular_velocity_fp_scaled = scale(torso_angular_velocity_fp_x),
+    max_cog_velo_scaled = scale(max_cog_velo_x)
+  )
+
+# 🔹 **Stan GAMM Model with Scaled Predictors**
+exit_velo_mod3 <- stan_gamm4(
+  exit_velo_mph_x ~ bat_speed_scaled + hitter_side + 
+    s(user, bs = "re") + 
+    s(torso_load_max_scaled) + 
+    s(lead_knee_stride_max_scaled) + 
+    poly(pelvis_angle_fp_scaled, 2) + 
+    s(poi_z_scaled) + 
+    s(torso_angular_velocity_fp_scaled) + 
+    max_cog_velo_scaled,  
+  family = gaussian(),
+  data = na.omit(h_rf_imputed),  
+  chains = 4, 
+  iter = 6000,  # Increased iterations for better sampling
+  warmup = 2000,  # More warmup samples to stabilize estimation
+  adapt_delta = 0.99,  # Higher acceptance rate to prevent divergences
+  control = list(max_treedepth = 15),  # Correct way to set max treedepth
+  cores = 4
+)
+
+# 🔹 **Log Model Fit Process**
+log_changes("Modeling", "Trained `stan_gamm4` exit velocity model with all predictors scaled.")
+
+# 🔹 **Print Summary**
+summary(exit_velo_mod3)
+log_changes("Modeling", "Printed summary of `stan_gamm4` exit velocity model with scaled predictors.")
+
+```
+
+```{r}
+# 🔹 Get fixed effect parameter names for each model
+params_ev_mod1 <- names(fixef(exit_velo_mod1))  # Extract only existing parameters
+params_ev_mod2 <- names(fixef(exit_velo_mod2))  # Extract only existing parameters
+params_ev_mod3 <- names(fixef(exit_velo_mod3))
+
+# 🔹 Define parameters to check for each model (filtering for existing ones)
+params_to_check_ev_mod1 <- intersect(c("(Intercept)", "bat_speed_mph_contact_x"), params_ev_mod1)
+params_to_check_ev_mod2 <- intersect(c("(Intercept)", "bat_speed_mph_contact_x", "pelvis_angle_fp_y", "max_cog_velo_x", "hitter_sideR", "torso_load_max_x", "lead_knee_stride_max_x", "poi_z", "torso_angular_velocity_fp_x"), params_ev_mod2)
+params_to_check_ev_mod3 <- intersect(c("(Intercept)", "bat_speed_scaled", "pelvis_angle_fp_scaled", "max_cog_velo_scaled", "hitter_sideR", "torso_load_max_scaled", "lead_knee_stride_max_scaled", "poi_z_scaled", "torso_angular_velocity_fp_scaled"), params_ev_mod3)
+
+# 🔹 Generate trace plots for Model 1 (only `bat speed`)
+mcmc_trace(as.array(as.matrix(exit_velo_mod1)), pars = params_to_check_ev_mod1) + 
+  ggtitle("Trace Plot - Model 1")
+
+# 🔹 Generate trace plots for Model 2 (all selected parameters)
+mcmc_trace(as.array(as.matrix(exit_velo_mod2)), pars = params_to_check_ev_mod2) + 
+  ggtitle("Trace Plot - Model 2")
+
+# 🔹 Generate trace plots for Model 3 (all selected parameters)
+mcmc_trace(as.array(as.matrix(exit_velo_mod3)), pars = params_to_check_ev_mod3) + 
+  ggtitle("Trace Plot - Model 3")
+
+log_changes("Visualization", "Generated trace plots for available fixed effects in EV Model 1, Model 2, Model 3.")
+
+```
+
+```{r}
+# 🔹 Extract Stan summary for both models
+summary_ev_mod1 <- rstan::summary(exit_velo_mod1$stanfit)$summary
+summary_ev_mod2 <- rstan::summary(exit_velo_mod2$stanfit)$summary
+summary_ev_mod3 <- rstan::summary(exit_velo_mod3$stanfit)$summary
+
+# 🔹 Extract only R-hat values
+ev_rhat_values_mod1 <- summary_ev_mod1[, "Rhat"]
+ev_rhat_values_mod2 <- summary_ev_mod2[, "Rhat"]
+ev_rhat_values_mod3 <- summary_ev_mod3[, "Rhat"]
+
+# 🔹 Convert to DataFrame and sort by highest R-hat
+ev_rhat_df_mod1 <- data.frame(coefficient = names(ev_rhat_values_mod1), rhat = ev_rhat_values_mod1) %>%
+  arrange(desc(rhat))
+
+ev_rhat_df_mod2 <- data.frame(coefficient = names(ev_rhat_values_mod2), rhat = ev_rhat_values_mod2) %>%
+  arrange(desc(rhat))
+
+ev_rhat_df_mod3 <- data.frame(coefficient = names(ev_rhat_values_mod3), rhat = ev_rhat_values_mod3) %>%
+  arrange(desc(rhat))
+
+# 🔹 **Remove `s(user)` parameters**
+ev_rhat_df_mod1_filtered <- ev_rhat_df_mod1 %>% filter(!grepl("^s\\(user", coefficient))
+ev_rhat_df_mod2_filtered <- ev_rhat_df_mod2 %>% filter(!grepl("^s\\(user", coefficient))
+ev_rhat_df_mod3_filtered <- ev_rhat_df_mod3 %>% filter(!grepl("^s\\(user", coefficient))
+
+# 🔹 Print filtered `R-hat` tables
+print("🔍 Sorted R-hat Values (Filtered) - EV Model 1")
+print(ev_rhat_df_mod1_filtered)
+
+print("🔍 Sorted R-hat Values (Filtered) - EV Model 2")
+print(ev_rhat_df_mod2_filtered)
+
+print("🔍 Sorted R-hat Values (Filtered) - EV Model 3")
+print(ev_rhat_df_mod3_filtered)
+
+log_changes("Diagnostics", "Filtered and extracted R-hat values for EV Model 1, Model 2, Model 3.")
+```
+
+```{r}
+# 🔹 Visualize R-hat values using ggplot (filtered)
+ggplot(ev_rhat_df_mod1_filtered, aes(x = reorder(coefficient, rhat), y = rhat)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +
+  labs(title = "Filtered R-hat Values - EV Model 1", x = "Parameter", y = "R-hat") +
+  theme_minimal()
+
+ggplot(ev_rhat_df_mod2_filtered, aes(x = reorder(coefficient, rhat), y = rhat)) +
+  geom_bar(stat = "identity", fill = "red") +
+  coord_flip() +
+  labs(title = "Filtered R-hat Values - EV Model 2", x = "Parameter", y = "R-hat") +
+  theme_minimal()
+
+ggplot(ev_rhat_df_mod3_filtered, aes(x = reorder(coefficient, rhat), y = rhat)) +
+  geom_bar(stat = "identity", fill = "red") +
+  coord_flip() +
+  labs(title = "Filtered R-hat Values - EV Model 3", x = "Parameter", y = "R-hat") +
+  theme_minimal()
+
+log_changes("Visualization", "Plotted filtered R-hat values for EV Model 1, Model 2, Model 3.")
+
+```
+
+```{r}
+# Compute residuals
+ev_residuals_mod1 <- residuals(exit_velo_mod1)
+ev_residuals_mod2 <- residuals(exit_velo_mod2)
+ev_residuals_mod3 <- residuals(exit_velo_mod3)
+
+# Residual histograms
+ggplot(data.frame(ev_residuals_mod1), aes(x = ev_residuals_mod1)) +
+  geom_histogram(bins = 30, fill = "blue", alpha = 0.6) +
+  ggtitle("Residuals - EV Model 1")
+
+ggplot(data.frame(ev_residuals_mod2), aes(x = ev_residuals_mod2)) +
+  geom_histogram(bins = 30, fill = "red", alpha = 0.6) +
+  ggtitle("Residuals - EV Model 2")
+
+ggplot(data.frame(ev_residuals_mod3), aes(x = ev_residuals_mod3)) +
+  geom_histogram(bins = 30, fill = "red", alpha = 0.6) +
+  ggtitle("Residuals - EV Model 3")
+
+log_changes("Visualization", "Generated residual histograms for EV Model 1, Model 2, Model 3.")
+```
+
+```{r}
+# Generate posterior predictive samples
+ev_y_rep_mod1 <- posterior_predict(exit_velo_mod1)
+ev_y_rep_mod2 <- posterior_predict(exit_velo_mod2)
+ev_y_rep_mod3 <- posterior_predict(exit_velo_mod3)
+
+# Convert to dataframes
+ev_df_mod1 <- data.frame(y_rep = apply(ev_y_rep_mod1, 2, mean))
+ev_df_mod2 <- data.frame(y_rep = apply(ev_y_rep_mod2, 2, mean))
+ev_df_mod3 <- data.frame(y_rep = apply(ev_y_rep_mod3, 2, mean))
+
+# Posterior predictive histograms
+ggplot(ev_df_mod1, aes(x = y_rep)) +
+  geom_histogram(bins = 30, fill = "blue", alpha = 0.6) +
+  ggtitle("Posterior Predictive - EV Model 1")
+
+ggplot(ev_df_mod2, aes(x = y_rep)) +
+  geom_histogram(bins = 30, fill = "red", alpha = 0.6) +
+  ggtitle("Posterior Predictive - EV Model 2")
+
+ggplot(ev_df_mod3, aes(x = y_rep)) +
+  geom_histogram(bins = 30, fill = "red", alpha = 0.6) +
+  ggtitle("Posterior Predictive - EV Model 3")
+
+
+log_changes("Visualization", "Generated posterior predictive histograms for EV Model 1, Model 2, Model 3.")
+
+```
+
+```{r}
+ggplot(data.frame(ev_y_rep_mod1 = apply(ev_y_rep_mod1, 2, mean), y_obs = h_rf_imputed$exit_velo_mph_x), aes(x = y_obs, y = ev_y_rep_mod1)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  ggtitle("Posterior Predictive Scatter - EV Model 1")
+
+ggplot(data.frame(ev_y_rep_mod2 = apply(ev_y_rep_mod2, 2, mean), y_obs = h_rf_imputed$exit_velo_mph_x), aes(x = y_obs, y = ev_y_rep_mod2)) +
+  geom_point(alpha = 0.5, color = "red") +
+  ggtitle("Posterior Predictive Scatter - EV Model 2")
+
+ggplot(data.frame(ev_y_rep_mod3 = apply(ev_y_rep_mod3, 2, mean), y_obs = h_rf_imputed$exit_velo_mph_x), aes(x = y_obs, y = ev_y_rep_mod3)) +
+  geom_point(alpha = 0.5, color = "red") +
+  ggtitle("Posterior Predictive Scatter - EV Model 3")
+
+log_changes("Visualization", "Generated posterior predictive scatterplots for EV Model 1, Model 2, Model 3.")
+
+```
+
+```{r}
+waic_ev_mod1 <- waic(exit_velo_mod1)
+waic_ev_mod2 <- waic(exit_velo_mod2)
+waic_ev_mod3 <- waic(exit_velo_mod3)
+
+log_changes("Model Comparison", "Computed WAIC for EV Model 1, Model 2, Model 3.")
+
+waic_ev_mod1
+waic_ev_mod2
+waic_ev_mod3
+
+loo_ev_mod1 <- loo(exit_velo_mod1)
+loo_ev_mod2 <- loo(exit_velo_mod2)
+loo_ev_mod3 <- loo(exit_velo_mod3)
+
+log_changes("Model Comparison", "Computed LOO cross-validation for EV Model 1, Model 2, Model 3.")
+
+loo_ev_mod1
+loo_ev_mod2
+loo_ev_mod3
+
+##pareto_k_mod1 <- loo(launch_angle_mod1, k_threshold = 0.7)
+##pareto_k_mod2 <- loo(launch_angle_mod2, k_threshold = 0.7)
+
+#log_changes("Model Comparison", "Computed Pareto K diagnostics for Model 1 & Model 2.")
+
+#pareto_k_mod1
+#pareto_k_mod2
+
+
+ev_kfold_mod1 <- kfold(exit_velo_mod1, K = 5)
+ev_kfold_mod2 <- kfold(exit_velo_mod2, K = 5)
+ev_kfold_mod3 <- kfold(exit_velo_mod3, K = 5)
+
+log_changes("Model Comparison", "Performed 5-Fold Cross-Validation for EV Model 1, Model 2, Model 3.")
+
+ev_kfold_mod1
+ev_kfold_mod2
+ev_kfold_mod3
+```
+
+```{r}
+# Compute predictions
+ev_y_pred_mod1 <- posterior_predict(exit_velo_mod1)
+ev_y_pred_mod2 <- posterior_predict(exit_velo_mod2)
+ev_y_pred_mod3 <- posterior_predict(exit_velo_mod3)
+
+# Compute RMSE
+ev_rmse_mod1 <- rmse(h_rf_imputed$exit_velo_mph_x, colMeans(ev_y_pred_mod1))
+ev_rmse_mod2 <- rmse(h_rf_imputed$exit_velo_mph_x, colMeans(ev_y_pred_mod2))
+ev_rmse_mod3 <- rmse(h_rf_imputed$exit_velo_mph_x, colMeans(ev_y_pred_mod3))
+
+# Compute MAE
+ev_mae_mod1 <- mae(h_rf_imputed$exit_velo_mph_x, colMeans(ev_y_pred_mod1))
+ev_mae_mod2 <- mae(h_rf_imputed$exit_velo_mph_x, colMeans(ev_y_pred_mod2))
+ev_mae_mod3 <- mae(h_rf_imputed$exit_velo_mph_x, colMeans(ev_y_pred_mod3))
+
+log_changes("Model Evaluation", "Computed RMSE & MAE for EV Model 1, Model 2, Model 3.")
+
+# Store results
+ev_model_comparison <- data.frame(
+  Model = c("Model 1", "Model 2", "Model 3"),
+  WAIC = c(waic_ev_mod1$estimates["waic", "Estimate"], waic_ev_mod2$estimates["waic", "Estimate"], waic_ev_mod3$estimates["waic", "Estimate"]),
+  LOO = c(loo_ev_mod1$estimates["looic", "Estimate"], loo_ev_mod2$estimates["looic", "Estimate"], loo_ev_mod3$estimates["looic", "Estimate"]),
+  RMSE = c(ev_rmse_mod1, ev_rmse_mod2, ev_rmse_mod3),
+  MAE = c(ev_mae_mod1, ev_mae_mod2, ev_mae_mod3)
+)
+
+print(model_comparison)
+
+log_changes("EV Model Evaluation", "Stored model performance metrics in comparison table.")
+
+```
+
+```{r}
+ggplot(data.frame(fitted = fitted(exit_velo_mod1), residuals = residuals(exit_velo_mod1)), aes(x = fitted, y = residuals)) +
+  geom_point(alpha = 0.5, color = "red") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(title = "Residuals vs. Fitted - EV Model 1", x = "Fitted Values", y = "Residuals") +
+  theme_minimal()
+
+ggplot(data.frame(fitted = fitted(exit_velo_mod2), residuals = residuals(exit_velo_mod2)), aes(x = fitted, y = residuals)) +
+  geom_point(alpha = 0.5, color = "red") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(title = "Residuals vs. Fitted - EV Model 2", x = "Fitted Values", y = "Residuals") +
+  theme_minimal()
+
+ggplot(data.frame(fitted = fitted(exit_velo_mod3), residuals = residuals(exit_velo_mod3)), aes(x = fitted, y = residuals)) +
+  geom_point(alpha = 0.5, color = "red") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(title = "Residuals vs. Fitted - EV Model 3", x = "Fitted Values", y = "Residuals") +
+  theme_minimal()
+```
+
+```{r}
+saveRDS(exit_velo_mod1,file = "exit_velo_mod1.rds")
+saveRDS(exit_velo_mod2,file = "exit_velo_mod2.rds")
+saveRDS(exit_velo_mod3,file = "exit_velo_mod3.rds")
+
+saveRDS(launch_angle_mod1,file = "launch_angle_mod1.rds")
+saveRDS(launch_angle_mod2,file = "launch_angle_mod2.rds")
+```
+
+```{r}
+set.seed(123)
+
+# Train-Test Split (70% train, 30% test)
+train_indices <- sample(seq_len(nrow(h_rf_imputed)), size = 0.7 * nrow(h_rf_imputed))
+train_data <- h_rf_imputed[train_indices, ]
+test_data <- h_rf_imputed[-train_indices, ]
+
+### LAUNCH ANGLE MODELS
+# V1: Model 1 Prediction
+preds_la_v1 <- posterior_epred(launch_angle_mod1, newdata = test_data)
+test_data$pred_la_v1 <- apply(preds_la_v1, 2, mean)
+
+# V2: Model 2 Prediction
+preds_la_v2 <- posterior_epred(launch_angle_mod2, newdata = test_data)
+test_data$pred_la_v2 <- apply(preds_la_v2, 2, mean)
+
+# Compute RMSE for Launch Angle
+rmse_la_v1 <- rmse(test_data$la, test_data$pred_la_v1)
+rmse_la_v2 <- rmse(test_data$la, test_data$pred_la_v2)
+
+# Select the best LA model
+test_data$pred_la <- ifelse(rmse_la_v1 < rmse_la_v2, test_data$pred_la_v1, test_data$pred_la_v2)
+
+### EXIT VELOCITY MODELS
+# V1: Model 1 Prediction
+preds_ev_v1 <- posterior_epred(exit_velo_mod1, newdata = test_data)
+test_data$pred_ev_v1 <- apply(preds_ev_v1, 2, mean)
+
+# V2: Model 2 Prediction
+preds_ev_v2 <- posterior_epred(exit_velo_mod2, newdata = test_data)
+test_data$pred_ev_v2 <- apply(preds_ev_v2, 2, mean)
+
+# Compute RMSE for Exit Velocity
+rmse_ev_v1 <- rmse(test_data$exit_velo_mph_x, test_data$pred_ev_v1)
+rmse_ev_v2 <- rmse(test_data$exit_velo_mph_x, test_data$pred_ev_v2)
+
+# Select the best EV model
+test_data$pred_ev <- ifelse(rmse_ev_v1 < rmse_ev_v2, test_data$pred_ev_v1, test_data$pred_ev_v2)
+```
+
+```{r}
+preds_la_full <- posterior_epred(launch_angle_mod1, newdata = h_rf_imputed)
+h_rf_imputed$pred_la <- apply(preds_la_full, 2, mean)  # Get per-row means
+
+preds_ev_full <- posterior_epred(exit_velo_mod1, newdata = h_rf_imputed)
+h_rf_imputed$pred_ev <- apply(preds_ev_full, 2, mean)  # Get per-row means
+```
+
+```{r}
+# Step 1: Clean the `res` Column
+h_rf_imputed <- h_rf_imputed %>%
+  mutate(res = str_trim(res)) %>%
+  mutate(cleaned_res = case_when(
+    # Singles
+    str_detect(res, "^1B") ~ "1B",
+    # Doubles
+    str_detect(res, "^2B") ~ "2B",
+    # Triples
+    str_detect(res, "^3B") ~ "3B",
+    # Home Runs
+    res == "HR" ~ "HR",
+    
+    # Groundouts
+    res %in% c("6-3", "4-3", "5-3", "U3") ~ "Groundout",
+    
+    # Flyouts
+    str_detect(res, "^F[0-9]") ~ "Flyout",
+    
+    # Exclude "Foul" and "2B-0"
+    res %in% c("Foul", "2B-0") ~ NA_character_,
+    
+    # Default (unknown/missing values)
+    TRUE ~ NA_character_
+  ))
+
+# Step 2: Apply Best Models (V1) for LA and EV Predictions
+preds_la_full <- posterior_epred(launch_angle_mod1, newdata = h_rf_imputed)
+h_rf_imputed$pred_la <- apply(preds_la_full, 2, mean)  
+
+preds_ev_full <- posterior_epred(exit_velo_mod1, newdata = h_rf_imputed)
+h_rf_imputed$pred_ev <- apply(preds_ev_full, 2, mean)  
+
+# Step 3: Compute wOBACON Using cleaned_res
+h_rf_imputed <- h_rf_imputed %>%
+  mutate(WOBACON = case_when(
+    cleaned_res == "1B" ~ 0.90,
+    cleaned_res == "2B" ~ 1.30,
+    cleaned_res == "3B" ~ 1.55,
+    cleaned_res == "HR" ~ 1.95,
+    cleaned_res %in% c("Groundout", "Flyout") ~ 0.00,
+    TRUE ~ NA_real_  # Preserve missing values
+  ))
+
+# Step 4: Verify Predictions & wOBACON
+head(h_rf_imputed[, c("user", "res", "cleaned_res", "la", "pred_la", "exit_velo_mph_x", "pred_ev", "WOBACON")])
+```
+
+```{r}
+# Aggregate Per-User Data
+user_summary <- h_rf_imputed %>%
+  group_by(user) %>%
+  summarise(
+    n = n(),  # Number of swings
+    avg_exit_velocity = mean(pred_ev, na.rm = TRUE),
+    p90_exit_velocity = quantile(pred_ev, 0.90, na.rm = TRUE),
+    
+    avg_bat_speed = mean(bat_speed_mph_contact_x, na.rm = TRUE),
+    p90_bat_speed = quantile(bat_speed_mph_contact_x, 0.90, na.rm = TRUE),
+    
+    avg_attack_angle = mean(attack_angle_contact_x, na.rm = TRUE),
+    sd_attack_angle = sd(attack_angle_contact_x, na.rm = TRUE),
+    
+    avg_launch_angle = mean(pred_la, na.rm = TRUE),
+    sd_launch_angle = sd(pred_la, na.rm = TRUE),
+    
+    avg_depth_of_contact = mean(poi_z, na.rm = TRUE),
+    sd_depth_of_contact = sd(poi_z, na.rm = TRUE),
+
+    # Swing Efficiency
+    avg_swing_efficiency = mean(bat_speed_mph_contact_x / exit_velo_mph_x, na.rm = TRUE),
+
+    # wOBACON per user
+    avg_WOBACON = mean(WOBACON, na.rm = TRUE)
+  )
+
+```
+
+```{r}
+# List of predictor variables (excluding user and avg_WOBACON)
+predictor_vars <- colnames(user_summary)[!colnames(user_summary) %in% c("user", "avg_WOBACON")]
+
+# Loop through each predictor variable and generate scatterplots
+for (var in predictor_vars) {
+  plot <- ggplot(user_summary, aes_string(x = var, y = "avg_WOBACON")) +
+    geom_point(alpha = 0.6, color = "blue") +  # Scatterplot points
+    geom_smooth(method = "loess", color = "red", se = FALSE, linetype = "solid") +  # LOESS trendline
+    geom_smooth(method = "lm", color = "black", se = FALSE, linetype = "dashed") +  # Linear regression trendline
+    labs(title = paste("Scatterplot of", var, "vs avg_WOBACON"),
+         x = var,
+         y = "avg_WOBACON") +
+    theme_minimal()
+  
+  print(plot)  # Display the plot
+}
+
+```
+
+```{r}
+# Select only numerical columns (excluding 'user' and 'n')
+cor_data <- user_summary %>%
+  select(-user, -n) %>%
+  na.omit()  # Remove rows with NA values
+
+# Compute the correlation matrix
+cor_matrix <- cor(cor_data, use = "complete.obs")
+
+# Print the correlation matrix
+print(cor_matrix)
+```
+
+```{r}
+# Visualize correlation matrix with a heatmap
+corrplot(cor_matrix, method = "color", type = "upper", 
+         tl.col = "black", tl.srt = 45, addCoef.col = "black", number.cex = 0.7)
+
+```
+
+```{r}
+# 🔹 **Stan GAMM Model for Predicting wOBACON**
+wobacon_mod <- stan_gamm4(
+  avg_WOBACON ~ avg_exit_velocity + avg_launch_angle + 
+    s(user, bs = "re"),  # Random effect for user
+  family = gaussian(),
+  data = na.omit(user_summary),  
+  chains = 4, 
+  iter = 6000,  # Increased iterations for better sampling
+  warmup = 2000,  # More warmup samples to stabilize estimation
+  adapt_delta = 0.99,  # Higher acceptance rate to prevent divergences
+  control = list(max_treedepth = 15),  # Increase depth for complex relationships
+  cores = 4
+)
+
+# View model summary
+summary(wobacon_mod)
+
+# 🔹 **Predict wOBACON for All Users**
+user_summary$predicted_WOBACON <- predict(wobacon_mod, newdata = user_summary)
+
+# 🔹 **Scatterplot of Actual vs. Predicted wOBACON**
+
+ggplot(user_summary, aes(x = avg_WOBACON, y = predicted_WOBACON)) +
+  geom_point(alpha = 0.6, color = "blue") +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +
+  labs(title = "Actual vs. Predicted wOBACON",
+       x = "Actual wOBACON",
+       y = "Predicted wOBACON") +
+  theme_minimal()
+
+saveRDS(wobacon_mod,file = "wobacon_mod.rds")
+```
+
+- looking at interaction terms within models
+- lasso regression? ridge regression? standardize predictors 
+- sample size has a lot to do with it, but we can still tweak to minimize
+- error analysis on a per type basis - biomech deficiencies/anomalys for each group "model struggled with these types of hitters"
+- Folder for pitching information (EDA at least, can we get to model?)
+- Hitting app folder- shiny chat gpt - link in slack
+- avatar using coordinates from landmarks
+- check slack for shiny app
+- flex-dash for hitting, shiny for pitching
+- some proof of concept on what the flex dash looks like
+- EDA on pitcher work
+```{r}
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(Metrics)  # For RMSE, MAE, R-squared
+```
+
+```{r}
+# Load test predictions
+test_preds <- test_preds <- read_csv("C:/Repos/Athlyticz_Projects/ATH_Biomech_Hit/data/output/test_predictions_LA.csv")
+
+
+# Inspect structure
+glimpse(test_preds)
+
+```
+
+```{r}
+# Calculate performance metrics
+rmse_val <- rmse(test_preds$actual, test_preds$predicted)
+mae_val <- mae(test_preds$actual, test_preds$predicted)
+r2_val <- cor(test_preds$actual, test_preds$predicted)^2
+
+# Print results
+cat("📉 **RMSE:**", round(rmse_val, 4), "\n")
+cat("📈 **R²:**", round(r2_val, 4), "\n")
+cat("📊 **MAE:**", round(mae_val, 4), "\n")
+
+# Summary statistics
+summary(test_preds)
+
+```
+
+```{r}
+# Compute residuals
+test_preds <- test_preds %>%
+  mutate(residuals = actual - predicted)
+
+# Residual histogram
+ggplot(test_preds, aes(x = residuals)) +
+  geom_histogram(bins = 30, fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Residuals Distribution", x = "Residuals", y = "Count")
+
+# Residual scatter plot
+ggplot(test_preds, aes(x = predicted, y = residuals)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  theme_minimal() +
+  labs(title = "Residuals vs. Predicted", x = "Predicted Exit Velo", y = "Residuals")
+
+```
+
+```{r}
+ggplot(test_preds, aes(x = actual, y = predicted)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
+  theme_minimal() +
+  labs(title = "Actual vs. Predicted Exit Velocity", x = "Actual Exit Velo", y = "Predicted Exit Velo")
+
+```
+

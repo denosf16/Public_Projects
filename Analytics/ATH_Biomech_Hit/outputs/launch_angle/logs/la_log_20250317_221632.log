@@ -1,0 +1,20 @@
+[2025-03-17 22:16:32] 🔄 Loading TEST dataset for LA predictions...
+
+[2025-03-17 22:16:32] ✅ No missing values detected. Proceeding with predictions...
+
+[2025-03-17 22:16:32] ✅ Base_LA Model loaded successfully.
+
+[2025-03-17 22:16:32] ✅ Advanced_LA Model loaded successfully.
+
+[2025-03-17 22:16:32] 🔄 Generating posterior predictions on TEST SET ONLY...
+
+[2025-03-17 22:16:32] 🚀 Predicting with Base_LA Model...
+
+[2025-03-17 22:16:33] ❌ Prediction failed for Base_LA : replacement has 0 rows, data has 204
+
+[2025-03-17 22:16:33] 🚀 Predicting with Advanced_LA Model...
+
+[2025-03-17 22:16:33] ❌ Prediction failed for Advanced_LA : replacement has 0 rows, data has 204
+
+[2025-03-17 22:16:33] ✅ Test set predictions saved to: la_predictions_test.csv
+

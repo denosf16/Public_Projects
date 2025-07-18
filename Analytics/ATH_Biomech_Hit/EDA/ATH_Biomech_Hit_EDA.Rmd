@@ -1,0 +1,859 @@
+---
+title: "ATH_BioMech"
+output: word_document
+date: "2025-01-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages("den")
+```
+
+```{r}
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+library(naniar)
+library(missRanger)
+library(VIM)
+library(dplyr)
+library(factoextra)
+library(stringr)
+library(cluster)
+library(dendextend)
+```
+
+Data Upload
+
+```{r}
+# Read the metadata.csv file
+hitter_metadata <- read.csv("https://raw.githubusercontent.com/drivelineresearch/openbiomechanics/main/baseball_hitting/data/metadata.csv")
+
+# Read the poi_metrics.csv file
+hitter_poi <- read.csv("https://raw.githubusercontent.com/drivelineresearch/openbiomechanics/main/baseball_hitting/data/poi/poi_metrics.csv")
+
+# Read the hittrax.csv file
+hitter_hittrax <- read.csv("https://raw.githubusercontent.com/drivelineresearch/openbiomechanics/main/baseball_hitting/data/poi/hittrax.csv")
+
+hitter_hittrax <- hitter_hittrax %>%
+  mutate(
+    pitch = ifelse(is.na(strike_zone), NA, pitch),
+    vertical_distance = ifelse(is.na(strike_zone), NA, vertical_distance),
+    horizontal_distance = ifelse(is.na(strike_zone), NA, horizontal_distance),
+    poi_x = ifelse(is.na(strike_zone), NA, poi_x),
+    poi_y = ifelse(is.na(strike_zone), NA, poi_y),
+    poi_z = ifelse(is.na(strike_zone), NA, poi_z),
+    pitch_angle = ifelse(is.na(strike_zone), NA, pitch_angle)
+  )
+
+# Display the structure of the data frames to confirm successful loading
+str(hitter_metadata)
+str(hitter_poi)
+str(hitter_hittrax)
+```
+
+```{r}
+# Ensure session_swing is a character column in all datasets
+hitter_metadata$session_swing <- as.character(hitter_metadata$session_swing)
+hitter_poi$session_swing <- as.character(hitter_poi$session_swing)
+hitter_hittrax$session_swing <- as.character(hitter_hittrax$session_swing)
+
+# Perform a full outer join for all datasets on session_swing
+hitter_combined <- hitter_metadata %>%
+  full_join(hitter_poi, by = "session_swing") %>%
+  full_join(hitter_hittrax, by = "session_swing")
+
+# Order the combined dataset by session_swing
+hitter_combined <- hitter_combined %>%
+  arrange(session_swing)
+
+str(hitter_combined)
+head(hitter_combined)
+```
+
+Data Cleaning
+
+```{r}
+# Identify and remove duplicate columns based on content
+hitter_combined <- hitter_combined[, !duplicated(as.list(hitter_combined))]
+
+# Restore column names if duplicates were removed
+restore_column_names <- function(df) {
+  # Check for `.x` or `.y` suffixes in column names
+  colnames(df) <- gsub("\\.x$", "", colnames(df))
+  colnames(df) <- gsub("\\.y$", "", colnames(df))
+  return(df)
+}
+
+hitter_combined <- restore_column_names(hitter_combined)
+colnames(hitter_combined)
+```
+
+
+```{r}
+# Check data types of all columns in h_poi_metrics
+data_types_h <- data.frame(
+  Variable = names(hitter_combined),
+  Data_Type = sapply(hitter_combined, class)
+)
+
+# Display the organized table
+print(data_types_h)
+```
+
+
+```{r}
+# Count missing values for each column
+missing_values_h <- colSums(is.na(hitter_combined))
+
+# Filter and list columns with NA > 0
+columns_with_na_h <- missing_values_h[missing_values_h > 0]
+
+# Display the result
+print("Columns with missing values:")
+print(columns_with_na_h)
+```
+
+```{r}
+# Prepare the data for imputation: include target columns and predictors
+imputation_data <- hitter_combined %>%
+  select(blast_bat_speed_mph_x, exit_velo_mph_x, everything())  # Target + predictors
+
+# Perform imputation on specified columns using missRanger
+h_rf_imputed <- missRanger(
+  data = imputation_data,              
+  vars = c("blast_bat_speed_mph_x",    
+           "exit_velo_mph_x"),         
+  verbose = TRUE                       
+)
+
+# Check for missing values after imputation
+print("Missing values after imputation:")
+print(colSums(is.na(h_rf_imputed)))
+
+# Inspect summary statistics of the imputed columns
+print("Summary of the imputed columns:")
+print(summary(h_rf_imputed[c("blast_bat_speed_mph_x", "exit_velo_mph_x")]))
+
+# Histogram for blast_bat_speed_mph_x
+ggplot(h_rf_imputed, aes(x = blast_bat_speed_mph_x)) +
+  geom_histogram(binwidth = 1, fill = "blue", alpha = 0.7) +
+  labs(title = "Imputed Blast Bat Speed Distribution", 
+       x = "Blast Bat Speed (mph)", 
+       y = "Frequency") +
+  theme_minimal()
+
+# Histogram for exit_velo_mph_x
+ggplot(h_rf_imputed, aes(x = exit_velo_mph_x)) +
+  geom_histogram(binwidth = 1, fill = "green", alpha = 0.7) +
+  labs(title = "Imputed Exit Velocity Distribution", 
+       x = "Exit Velocity (mph)", 
+       y = "Frequency") +
+  theme_minimal()
+```
+
+```{r}
+# Prepare the data for KNN imputation: include target columns and predictors
+knn_imputation_data <- hitter_combined %>%
+  select(blast_bat_speed_mph_x, exit_velo_mph_x, everything())  # Target + predictors
+
+# Perform KNN imputation on specified columns
+h_knn_imputed <- kNN(
+  data = knn_imputation_data,
+  variable = c("blast_bat_speed_mph_x", "exit_velo_mph_x"),  # Columns to impute
+  imp_var = FALSE  # Do not add columns indicating imputation
+)
+
+# Check for missing values after imputation
+print("Missing values after KNN imputation:")
+print(colSums(is.na(h_knn_imputed)))
+
+# Inspect summary statistics of the imputed columns
+print("Summary of the imputed columns:")
+print(summary(h_knn_imputed[c("blast_bat_speed_mph_x", "exit_velo_mph_x")]))
+
+# Visualize the distribution of the imputed data (optional)
+library(ggplot2)
+
+# Histogram for blast_bat_speed_mph_x
+ggplot(h_knn_imputed, aes(x = blast_bat_speed_mph_x)) +
+  geom_histogram(binwidth = 1, fill = "blue", alpha = 0.7) +
+  labs(title = "Imputed Blast Bat Speed Distribution (KNN)", 
+       x = "Blast Bat Speed (mph)", 
+       y = "Frequency") +
+  theme_minimal()
+
+# Histogram for exit_velo_mph_x
+ggplot(h_knn_imputed, aes(x = exit_velo_mph_x)) +
+  geom_histogram(binwidth = 1, fill = "green", alpha = 0.7) +
+  labs(title = "Imputed Exit Velocity Distribution (KNN)", 
+       x = "Exit Velocity (mph)", 
+       y = "Frequency") +
+  theme_minimal()
+```
+
+```{r}
+ggplot() +
+  # Add Random Forest imputed data
+  geom_point(data = h_rf_imputed, aes(x = blast_bat_speed_mph_x, y = bat_speed_mph_contact_x),
+             color = "blue", shape = 16, size = 2, alpha = 0.6) +  # Shape 16: Solid Circle
+  
+  # Add KNN imputed data
+  geom_point(data = h_knn_imputed, aes(x = blast_bat_speed_mph_x, y = bat_speed_mph_contact_x),
+             color = "red", shape = 17, size = 2, alpha = 0.6) +  # Shape 17: Triangle
+  
+  # Add labels and theme
+  labs(title = "Comparison of Imputation Methods (RF vs. KNN)",
+       x = "Blast Bat Speed (mph)",
+       y = "Bat Speed (mph)") +
+  theme_minimal()
+```
+
+```{r}
+ggplot() +
+  # Histogram for Random Forest imputed values
+  geom_histogram(data = h_rf_imputed, aes(x = blast_bat_speed_mph_x), 
+                 fill = "blue", alpha = 0.5, bins = 30) +
+  
+  # Histogram for KNN imputed values
+  geom_histogram(data = h_knn_imputed, aes(x = blast_bat_speed_mph_x), 
+                 fill = "red", alpha = 0.5, bins = 30) +
+  
+  # Add labels and theme
+  labs(title = "Distribution of Imputed Blast Bat Speed (RF vs. KNN)",
+       x = "Blast Bat Speed (mph)",
+       y = "Frequency") +
+  theme_minimal()
+```
+
+```{r}
+# Set seed for reproducibility
+set.seed(42)
+
+# Step 1: Introduce missingness in a controlled manner
+test_data <- hitter_combined
+original_values <- test_data$bat_speed_mph_contact_x  # Save original values
+missing_indices <- sample(1:nrow(test_data), size = 0.2 * nrow(test_data))  # 20% missing
+test_data$bat_speed_mph_contact_x[missing_indices] <- NA
+
+# Step 2: Perform Random Forest Imputation
+library(missRanger)
+test_data_rf <- missRanger(test_data, vars = "bat_speed_mph_contact_x", verbose = TRUE)
+
+# Step 3: Perform KNN Imputation
+library(VIM)
+test_data_knn <- kNN(test_data, variable = "bat_speed_mph_contact_x", imp_var = FALSE)
+
+# Step 4: Evaluate Imputation with MAE
+mae_rf <- mean(abs(original_values[missing_indices] - test_data_rf$bat_speed_mph_contact_x[missing_indices]), na.rm = TRUE)
+mae_knn <- mean(abs(original_values[missing_indices] - test_data_knn$bat_speed_mph_contact_x[missing_indices]), na.rm = TRUE)
+
+print(paste("MAE (RF):", mae_rf))
+print(paste("MAE (KNN):", mae_knn))
+
+# Step 5: Evaluate Imputation with R²
+r_squared_rf <- cor(original_values[missing_indices], test_data_rf$bat_speed_mph_contact_x[missing_indices], use = "complete.obs")^2
+r_squared_knn <- cor(original_values[missing_indices], test_data_knn$bat_speed_mph_contact_x[missing_indices], use = "complete.obs")^2
+
+print(paste("R² (RF):", r_squared_rf))
+print(paste("R² (KNN):", r_squared_knn))
+
+# Step 6: Prepare Comparison Data
+comparison_data <- data.frame(
+  Original = original_values[missing_indices],
+  RF_Imputed = test_data_rf$bat_speed_mph_contact_x[missing_indices],
+  KNN_Imputed = test_data_knn$bat_speed_mph_contact_x[missing_indices]
+)
+
+# Step 7: Plot Imputed vs. Original Values
+library(ggplot2)
+
+ggplot(comparison_data) +
+  geom_point(aes(x = Original, y = RF_Imputed), color = "blue", alpha = 0.7) +
+  geom_point(aes(x = Original, y = KNN_Imputed), color = "red", alpha = 0.7) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
+  labs(title = "Imputed vs. Original Values (RF vs. KNN)",
+       x = "Original Values",
+       y = "Imputed Values") +
+  theme_minimal()
+```
+
+
+```{r}
+# Fit a linear model to calculate R^2
+lm_fit <- lm(exit_velo_mph_x ~ bat_speed_mph_contact_x, data = h_rf_imputed)
+r_squared <- summary(lm_fit)$r.squared
+
+# Scatter plot with R^2 annotation
+ggplot(h_rf_imputed, aes(x = bat_speed_mph_contact_x, y = exit_velo_mph_x)) +
+  geom_point(color = "blue", alpha = 0.7) +  # Points with transparency
+  geom_smooth(method = "lm", color = "red", se = TRUE) +  # Linear trendline with confidence interval
+  labs(
+    title = "Relationship Between Bat Speed and Exit Velocity",
+    x = "Bat Speed at Contact (mph)",
+    y = "Exit Velocity (mph)"
+  ) +
+  annotate("text", x = max(h_rf_imputed$bat_speed_mph_contact_x, na.rm = TRUE), 
+           y = max(h_rf_imputed$exit_velo_mph_x, na.rm = TRUE), 
+           label = paste0("R² = ", round(r_squared, 3)),
+           hjust = 1, vjust = 1, color = "black", size = 5) +  # R² annotation
+  theme_minimal() 
+```
+
+```{r}
+# Select numeric columns
+h_numeric_data <- h_rf_imputed[sapply(h_rf_imputed, is.numeric)]
+
+# Remove columns containing "bat_speed" except "bat_speed_mph_contact_x" and remove "exit_velo_mph_x"
+h_numeric_clean <- h_numeric_data[, 
+                                   !grepl("bat_speed", colnames(h_numeric_data)) | 
+                                   colnames(h_numeric_data) == "bat_speed_mph_contact_x"]
+h_numeric_clean <- h_numeric_clean[, colnames(h_numeric_clean) != "exit_velo_mph_x"]
+
+h_numeric_clean <- subset(h_numeric_clean, h_numeric_clean$poi_z >0)
+
+# Confirm the new dataset
+# print(colnames(h_numeric_clean))
+```
+
+```{r}
+# Calculate the correlation matrix
+h_cor_matrix <- cor(h_numeric_clean, use = "complete.obs")
+
+# Filter variables with correlation < -0.2 or > 0.2
+threshold <- 0.15
+significant_vars <- rownames(h_cor_matrix[h_cor_matrix["bat_speed_mph_contact_x", ] < -threshold | 
+                                           h_cor_matrix["bat_speed_mph_contact_x", ] > threshold, , drop = FALSE])
+
+# Subset the correlation matrix to include only significant variables
+h_filtered_cor_matrix <- h_cor_matrix[significant_vars, significant_vars]
+
+# Adjust gradient if all correlations are positive
+cor_min <- min(h_filtered_cor_matrix, na.rm = TRUE)
+cor_max <- max(h_filtered_cor_matrix, na.rm = TRUE)
+
+if (cor_min >= 0) {
+  scale_fill <- scale_fill_gradient(low = "white", high = "red", limits = c(0, 1), name = "Correlation")
+} else {
+  scale_fill <- scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0, limits = c(-1, 1), name = "Correlation")
+}
+
+# Plot the correlation heatmap
+h_filtered_cor_melt <- melt(h_filtered_cor_matrix)
+ggplot(data = h_filtered_cor_melt, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 10)) +
+  labs(title = paste("Filtered Correlation Matrix Heatmap"),
+       x = "",
+       y = "") +
+  coord_fixed()
+```
+
+```{r}
+# Threshold for correlation
+threshold <- 0.15
+
+# Identify columns meeting the threshold
+significant_vars <- rownames(h_cor_matrix[h_cor_matrix["bat_speed_mph_contact_x", ] < -threshold | 
+                                           h_cor_matrix["bat_speed_mph_contact_x", ] > threshold, , drop = FALSE])
+
+# Columns to remove explicitly
+columns_to_remove <- c("bat_length_in", "bat_weight_oz", "dist", 
+                       "session_height_in", "session_mass_lbs", 
+                       "athlete_age", "session", "sweet_spot_velo_mph_contact_x")
+
+# Remove columns containing "hand_speed" or "arm_speed" and explicit columns
+significant_vars <- significant_vars[!(
+  grepl("hand_speed|arm_speed", significant_vars) | 
+  significant_vars %in% columns_to_remove
+)]
+
+significant_vars_df <- data.frame(
+  Variable = significant_vars,
+  Correlation = h_cor_matrix["bat_speed_mph_contact_x", significant_vars]
+)
+
+# Order the data frame alphabetically by the variable name
+significant_vars_df <- significant_vars_df[order(significant_vars_df$Variable), ]
+```
+
+```{r}
+# Loop through each significant variable for scatterplots
+for (variable in significant_vars) {
+  
+  # Create scatterplot
+  scatterplot <- ggplot(h_numeric_clean, aes_string(x = variable, y = "bat_speed_mph_contact_x")) +
+    geom_point(color = "blue", alpha = 0.6) +
+    geom_smooth(method = "lm", color = "red", se = TRUE) +
+    labs(
+      title = paste("Scatterplot of", variable, "vs Bat Speed"),
+      x = variable,
+      y = "Bat Speed (mph)"
+    ) +
+    theme_minimal()
+  
+  # Display the scatterplot
+  print(scatterplot)
+}
+```
+
+```{r}
+# Loop through each significant variable for histograms
+for (variable in significant_vars) {
+  
+  # Calculate dynamic bin width (e.g., 30 bins)
+  data_range <- max(h_numeric_clean[[variable]], na.rm = TRUE) - min(h_numeric_clean[[variable]], na.rm = TRUE)
+  bin_width <- data_range / 30  # Adjust '30' for more or fewer bins
+  
+  # Create histogram for the variable
+  histogram <- ggplot(h_numeric_clean, aes_string(x = variable)) +
+    geom_histogram(binwidth = bin_width, fill = "blue", color = "black", alpha = 0.7) +
+    labs(
+      title = paste("Histogram of", variable),
+      x = variable,
+      y = "Frequency"
+    ) +
+    theme_minimal()
+  
+  # Display the histogram
+  print(histogram)
+}
+```
+
+```{r}
+library(randomForest)
+
+# Prepare the data for Random Forest
+rf_data <- h_rf_imputed[, significant_vars]
+
+# Impute missing values in poi_z
+rf_data <- missRanger(rf_data, vars = "poi_z", verbose = TRUE)
+
+# Fit the Random Forest model
+rf_model <- randomForest(bat_speed_mph_contact_x ~ ., data = rf_data, importance = TRUE)
+
+# Get feature importance
+importance_scores <- importance(rf_model)
+
+# Sort features by importance
+importance_df <- data.frame(
+  Variable = rownames(importance_scores),
+  Importance = importance_scores[, "IncNodePurity"]
+)
+importance_df <- importance_df[order(-importance_df$Importance), ]
+
+# Display feature importance
+print("Feature Importance (Sorted):")
+print(importance_df)
+
+# Plot feature importance
+library(ggplot2)
+ggplot(importance_df, aes(x = reorder(Variable, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +
+  labs(title = "Feature Importance from Random Forest",
+       x = "Variable",
+       y = "Importance (IncNodePurity)") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(importance_df, aes(x = reorder(Variable, Importance), y = Importance, fill = Importance)) +
+  geom_bar(stat = "identity") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  coord_flip() +
+  labs(title = "Feature Importance from Random Forest",
+       x = "Variable",
+       y = "Importance (IncNodePurity)") +
+  theme_minimal()
+```
+
+```{r}
+# Create subsets for each level of "highest_playing_level"
+hitter_subsets <- split(h_rf_imputed, h_rf_imputed$highest_playing_level)
+
+# Display the available levels
+print("Levels in highest_playing_level:")
+print(names(hitter_subsets))
+```
+
+```{r}
+# Variables to visualize from the feature importance list
+important_vars <- c("poi_z", "pelvis_angular_velocity_maxhss_x", "torso_angular_velocity_maxhss_x", 
+                    "torso_stride_max_z", "pelvis_stride_max_z", "lead_wrist_fm_x", 
+                    "pelvis_angular_velocity_fp_x", "torso_pelvis_stride_max_z", 
+                    "torso_angular_velocity_seq_max_x", "x_factor_fp_z", "pelvis_angular_velocity_stride_max_x", 
+                    "lead_knee_stride_max_x", "bat_max_x", "sweet_spot_velo_mph_contact_y", 
+                    "max_cog_velo_x", "sweet_spot_velo_mph_contact_z", "torso_angular_velocity_fp_x", 
+                    "pelvis_angular_velocity_seq_max_x", "torso_angular_velocity_stride_max_x")
+
+# Loop through each important variable and create one boxplot with all levels
+for (var in important_vars) {
+  if (var %in% colnames(h_rf_imputed)) {  # Ensure the variable exists in the dataset
+    
+    # Compute summary statistics (mean & median) per level
+    summary_stats <- h_rf_imputed %>%
+      group_by(highest_playing_level) %>%
+      summarise(mean_value = mean(.data[[var]], na.rm = TRUE),
+                median_value = median(.data[[var]], na.rm = TRUE))
+
+    # Generate boxplot
+    plot <- ggplot(h_rf_imputed, aes(x = highest_playing_level, y = .data[[var]], fill = highest_playing_level)) +
+      geom_boxplot(alpha = 0.6, outlier.shape = NA) +  # Boxplot with transparency & no outliers
+      
+      # Add mean points
+      geom_point(data = summary_stats, aes(x = highest_playing_level, y = mean_value), 
+                 color = "red", size = 3, shape = 16) +  # Mean as red dot
+
+      # Add median line
+      geom_point(data = summary_stats, aes(x = highest_playing_level, y = median_value), 
+                 color = "black", size = 2, shape = 95) +  # Median as small horizontal line
+      
+      labs(title = paste("Boxplot for", var, "by Playing Level"),
+           x = "Highest Playing Level",
+           y = var) +
+      theme_minimal() +
+      theme(legend.position = "none")  # Remove legend since x-axis already labels playing levels
+    
+    print(plot)  # Display the plot
+  }
+}
+```
+
+```{r}
+h_rf_imputed <- h_rf_imputed %>%
+  mutate(res = str_trim(res))
+```
+
+```{r}
+h_rf_imputed <- h_rf_imputed %>%
+  mutate(cleaned_res = case_when(
+    # Singles
+    str_detect(res, "^1B") ~ "1B",
+    # Doubles
+    str_detect(res, "^2B") ~ "2B",
+    # Triples
+    str_detect(res, "^3B") ~ "3B",
+    # Home Runs
+    res == "HR" ~ "HR",
+    
+    # Groundouts
+    res %in% c("6-3", "4-3", "5-3", "U3") ~ "Groundout",
+    
+    # Flyouts
+    str_detect(res, "^F[0-9]") ~ "Flyout",
+    
+    # Exclude "Foul" and "2B-0" explicitly
+    res %in% c("Foul", "2B-0") ~ NA_character_,
+    
+    # Default (unknown/missing values)
+    TRUE ~ NA_character_
+  ))
+
+# Create WOBACON column based on cleaned_res
+h_rf_imputed <- h_rf_imputed %>%
+  mutate(WOBACON = case_when(
+    cleaned_res == "1B" ~ 0.90,
+    cleaned_res == "2B" ~ 1.30,
+    cleaned_res == "3B" ~ 1.55,
+    cleaned_res == "HR" ~ 1.95,
+    cleaned_res %in% c("Groundout", "Flyout") ~ 0.00,
+    TRUE ~ NA_real_  # Preserve missing values
+  ))
+
+# Print updated dataset
+print(h_rf_imputed %>% select(res, cleaned_res, WOBACON))
+```
+
+```{r}
+h_rf_imputed %>%
+  summarise(
+    res_NA = sum(is.na(res)),
+    cleaned_res_NA = sum(is.na(cleaned_res)),
+    WOBACON_NA = sum(is.na(WOBACON))
+  )
+```
+
+
+```{r}
+# Function to calculate the 90th percentile safely
+percentile_90 <- function(x) {
+  if (sum(!is.na(x)) == 0) return(NA)  # Return NA if all values are missing
+  quantile(x, 0.90, na.rm = TRUE)
+}
+
+# Compute Swing Efficiency per swing
+h_rf_imputed <- h_rf_imputed %>%
+  mutate(swing_efficiency = bat_speed_mph_contact_x / exit_velo_mph_x)
+
+# Compute summary statistics for each user
+user_summary <- h_rf_imputed %>%
+  group_by(user) %>%
+  summarise(
+    n = n(),  # Count number of swings
+    avg_exit_velocity = mean(exit_velo_mph_x, na.rm = TRUE),
+    p90_exit_velocity = percentile_90(exit_velo_mph_x),
+    
+    avg_bat_speed = mean(bat_speed_mph_contact_x, na.rm = TRUE),
+    p90_bat_speed = percentile_90(bat_speed_mph_contact_x),
+    
+    avg_attack_angle = mean(attack_angle_contact_x, na.rm = TRUE),
+    sd_attack_angle = sd(attack_angle_contact_x, na.rm = TRUE),
+    
+    avg_launch_angle = mean(la, na.rm = TRUE),
+    sd_launch_angle = sd(la, na.rm = TRUE),
+    
+    avg_depth_of_contact = mean(poi_z, na.rm = TRUE),
+    sd_depth_of_contact = sd(poi_z, na.rm = TRUE),
+    
+    # Swing Efficiency metrics
+    avg_swing_efficiency = mean(swing_efficiency, na.rm = TRUE),
+    p90_swing_efficiency = percentile_90(swing_efficiency),
+
+    # WOBACON per user
+    avg_WOBACON = mean(WOBACON, na.rm = TRUE)
+  )
+
+# Print the updated user_summary dataset
+print(user_summary)
+```
+
+```{r}
+# Count missing values for each column
+missing_values_us <- colSums(is.na(user_summary))
+
+# Filter and list columns with NA > 0
+columns_with_na_h <- missing_values_us[missing_values_us > 0]
+
+# Display the result
+print("Columns with missing values:")
+print(missing_values_us)
+```
+
+```{r}
+# Select features for clustering
+clustering_data <- user_summary %>%
+  select(p90_exit_velocity, sd_launch_angle)
+
+# Standardize data
+clustering_data_scaled <- scale(clustering_data)
+
+# View standardized data
+print(head(clustering_data_scaled))
+```
+
+```{r}
+library(factoextra)
+
+# Elbow Method for optimal K
+fviz_nbclust(clustering_data_scaled, kmeans, method = "wss") +
+  labs(title = "Elbow Method for Optimal Number of Clusters") +
+  theme_minimal()
+```
+
+```{r}
+# Elbow Method for optimal K
+fviz_nbclust(clustering_data_scaled, kmeans, method = "silhouette") +
+  labs(title = "Silhouette Method for Optimal K") +
+  theme_minimal()
+```
+
+
+```{r}
+# Set the number of clusters
+set.seed(42)
+
+# Fit K-Means for k = 2
+kmeans_2 <- kmeans(clustering_data_scaled, centers = 2, nstart = 25)
+
+# Fit K-Means for k = 3
+kmeans_3 <- kmeans(clustering_data_scaled, centers = 3, nstart = 25)
+```
+
+```{r}
+dist_matrix <- dist(clustering_data_scaled,method="euclidean")
+
+hclust_model <- hclust(dist_matrix,method="ward.D2")
+
+plot(hclust_model,main="Hierarchical Clustering Dendrogram",sub="")
+
+hc_2_clusters <- cutree(hclust_model,k=2)
+hc_3_clusters <- cutree(hclust_model,k=3)
+
+clustering_data_scaled$hc_2_clusters <- hc_2_clusters
+clustering_data_scaled$hc_3_clusters <- hc_3_clusters
+
+ggplot(clustering_data_scaled,aes(x=p90_exit_velocity,y=sd_launch_angle,color=as.factor(hc_2_clusters)))+
+  geom_point(size=3)+
+  labs(title="Hierarchical Clustering (k=2)",color="Cluster")+theme_minimal()
+```
+
+
+
+```{r}
+library(cluster)
+library(factoextra)
+
+# Compute silhouette scores
+silhouette_2 <- silhouette(kmeans_2$cluster, dist(clustering_data_scaled))
+silhouette_3 <- silhouette(kmeans_3$cluster, dist(clustering_data_scaled))
+
+# Average silhouette width for each k
+avg_sil_2 <- mean(silhouette_2[, 3])
+avg_sil_3 <- mean(silhouette_3[, 3])
+
+# Print results
+print(paste("Average Silhouette Score for k=2:", round(avg_sil_2, 3)))
+print(paste("Average Silhouette Score for k=3:", round(avg_sil_3, 3)))
+
+```
+```{r}
+fviz_cluster(kmeans_2, data = clustering_data_scaled, ellipse.type = "convex") +
+  labs(title = "K-Means Clustering (k=2)")
+```
+
+```{r}
+fviz_cluster(kmeans_3, data = clustering_data_scaled, ellipse.type = "convex") +
+  labs(title = "K-Means Clustering (k=3)")
+
+```
+
+
+```{r}
+# Add cluster labels to original data
+user_summary$cluster_2 <- as.factor(kmeans_2$cluster)
+user_summary$cluster_3 <- as.factor(kmeans_3$cluster)
+
+# Compare feature means for k=2
+summary_2 <- user_summary %>%
+  group_by(cluster_2) %>%
+  summarise(
+    avg_exit_velocity = mean(p90_exit_velocity),
+    avg_launch_sd = mean(sd_launch_angle),
+    n = n()
+  )
+
+# Compare feature means for k=3
+summary_3 <- user_summary %>%
+  group_by(cluster_3) %>%
+  summarise(
+    avg_exit_velocity = mean(p90_exit_velocity),
+    avg_launch_sd = mean(sd_launch_angle),
+    n = n()
+  )
+
+print(summary_2)
+print(summary_3)
+
+```
+
+
+
+
+
+
+
+
+
+
+PITCHING
+
+```{r}
+# Select numeric columns
+p_numeric_data <- p_poi_metrics[sapply(p_poi_metrics, is.numeric)]
+```
+
+```{r}
+# Calculate the correlation matrix
+p_cor_matrix <- cor(p_numeric_data, use = "complete.obs")
+
+# Filter variables with correlation < -0.2 or > 0.2
+threshold <- 0.25
+significant_vars_p <- rownames(p_cor_matrix[p_cor_matrix["pitch_speed_mph", ] < -threshold | 
+                                           p_cor_matrix["pitch_speed_mph", ] > threshold, , drop = FALSE])
+
+# Subset the correlation matrix to include only significant variables
+p_filtered_cor_matrix <- p_cor_matrix[significant_vars_p, significant_vars_p]
+
+# Adjust gradient if all correlations are positive
+cor_min <- min(p_filtered_cor_matrix, na.rm = TRUE)
+cor_max <- max(p_filtered_cor_matrix, na.rm = TRUE)
+
+if (cor_min >= 0) {
+  scale_fill <- scale_fill_gradient(low = "white", high = "red", limits = c(0, 1), name = "Correlation")
+} else {
+  scale_fill <- scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0, limits = c(-1, 1), name = "Correlation")
+}
+
+# Plot the correlation heat map
+p_filtered_cor_melt <- melt(p_filtered_cor_matrix)
+ggplot(data = p_filtered_cor_melt, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 10)) +
+  labs(title = paste("Filtered Correlation Matrix Heatmap"),
+       x = "",
+       y = "") +
+  coord_fixed()
+```
+
+```{r}
+# Loop through each significant variable for scatter plots
+for (variable in significant_vars_p) {
+  
+  # Create scatter plot
+  scatterplot <- ggplot(p_numeric_data, aes_string(x = variable, y = "pitch_speed_mph")) +
+    geom_point(color = "blue", alpha = 0.6) +
+    geom_smooth(method = "lm", color = "red", se = TRUE) +
+    labs(
+      title = paste("Scatterplot of", variable, "vs Release Speed"),
+      x = variable,
+      y = "Velo (mph)"
+    ) +
+    theme_minimal()
+  
+  # Display the scatter plot
+  print(scatterplot)
+}
+```
+
+```{r}
+# Loop through each significant variable for histograms
+for (variable in significant_vars_p) {
+  
+  # Calculate dynamic bin width (e.g., 30 bins)
+  data_range <- max(p_numeric_data[[variable]], na.rm = TRUE) - min(p_numeric_data[[variable]], na.rm = TRUE)
+  bin_width <- data_range / 30  # Adjust '30' for more or fewer bins
+  
+  # Create histogram for the variable
+  histogram <- ggplot(p_numeric_data, aes_string(x = variable)) +
+    geom_histogram(binwidth = bin_width, fill = "blue", color = "black", alpha = 0.7) +
+    labs(
+      title = paste("Histogram of", variable),
+      x = variable,
+      y = "Frequency"
+    ) +
+    theme_minimal()
+  
+  # Display the histogram
+  print(histogram)
+}
+```
+
+```{r}
+# Count the number of unique sessions
+num_sessions <- length(unique(p_poi_metrics$session))
+
+# Print the result
+print(paste("Number of unique sessions:", num_sessions))
+```
+-> skimr
+-> dataexplorer

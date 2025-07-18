@@ -1,0 +1,16 @@
+[2025-03-17 16:33:32] 🚀 Starting LA Model Evaluation...
+
+[2025-03-17 16:33:33] ✅ Base LA Model Loaded.
+
+[2025-03-17 16:33:33] ✅ Advanced LA Model Loaded.
+
+[2025-03-17 16:33:35] 📊 Calculating evaluation metrics...
+
+[2025-03-17 16:33:35] ✅ LA Model Evaluation Metrics Saved.
+
+[2025-03-17 16:33:35] 📊 Generating trace plots...
+
+[2025-03-17 16:34:04] ✅ Trace plots saved.
+
+[2025-03-17 16:34:04] 📊 Checking Rhat & ESS diagnostics...
+

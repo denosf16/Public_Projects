@@ -1,0 +1,18 @@
+[2025-03-17 22:41:45] 🔄 Loading TEST dataset for LA predictions...
+
+[2025-03-17 22:41:45] ✅ No missing values detected. Proceeding with predictions...
+
+[2025-03-17 22:41:45] ✅ Base_LA Model loaded successfully.
+
+[2025-03-17 22:41:46] ✅ Advanced_LA Model loaded successfully.
+
+[2025-03-17 22:41:46] 🚀 Predicting with Base_LA Model...
+
+[2025-03-17 22:41:46] ✅ Base_LA predictions added and scaled back.
+
+[2025-03-17 22:41:46] 🚀 Predicting with Advanced_LA Model...
+
+[2025-03-17 22:41:46] ✅ Advanced_LA predictions added and scaled back.
+
+[2025-03-17 22:41:46] ✅ Test set predictions saved to: C:/Repos/Athlyticz_Projects/ATH_Biomech_Hit/outputs/launch_angle/la_predictions_test.csv
+

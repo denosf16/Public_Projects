@@ -1,0 +1,18 @@
+[2025-03-18 22:03:05] 🔄 Loading TEST dataset for EV predictions...
+
+[2025-03-18 22:03:06] ✅ No missing values detected. Proceeding with predictions...
+
+[2025-03-18 22:03:06] ✅ Base_EV Model loaded successfully.
+
+[2025-03-18 22:03:06] ✅ Advanced_EV Model loaded successfully.
+
+[2025-03-18 22:03:06] 🚀 Predicting with Base_EV Model...
+
+[2025-03-18 22:03:07] ✅ Base_EV predictions added and scaled back.
+
+[2025-03-18 22:03:07] 🚀 Predicting with Advanced_EV Model...
+
+[2025-03-18 22:03:08] ✅ Advanced_EV predictions added and scaled back.
+
+[2025-03-18 22:03:08] ✅ Test set predictions saved to: C:/Repos/Athlyticz_Projects/ATH_Biomech_Hit/outputs/exit_velocity/ev_predictions_test.csv
+

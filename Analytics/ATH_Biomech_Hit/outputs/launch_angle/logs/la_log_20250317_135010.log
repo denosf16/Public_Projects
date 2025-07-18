@@ -1,0 +1,20 @@
+[2025-03-17 13:50:10] 🚀 Starting Launch Angle Model Training...
+
+[2025-03-17 13:50:10] 🔄 Loading cleaned dataset for Launch Angle...
+
+[2025-03-17 13:50:10] ✅ No missing values detected. Proceeding...
+
+[2025-03-17 13:50:10] ✅ Numeric predictors standardized.
+
+[2025-03-17 13:50:10] 🔍 Checking data structure before training...
+
+[2025-03-17 13:50:10] 🚀 Training Base Launch Angle Model...
+
+[2025-03-17 13:52:14] ✅ Base Launch Angle Model saved.
+
+[2025-03-17 13:52:14] 🚀 Training Advanced Launch Angle Model...
+
+[2025-03-17 13:52:15] ✅ Advanced Launch Angle Model saved.
+
+[2025-03-17 13:52:15] 🎉 Launch Angle model training completed successfully!
+

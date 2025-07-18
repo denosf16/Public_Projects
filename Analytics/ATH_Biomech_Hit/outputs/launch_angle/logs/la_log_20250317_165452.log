@@ -1,0 +1,12 @@
+[2025-03-17 16:54:52] 🚀 Starting LA Model Evaluation...
+
+[2025-03-17 16:54:52] ✅ Base LA Model Loaded.
+
+[2025-03-17 16:54:52] ✅ Advanced LA Model Loaded.
+
+[2025-03-17 16:54:54] 📊 Calculating evaluation metrics...
+
+[2025-03-17 16:54:54] ✅ LA Model Evaluation Metrics Saved.
+
+[2025-03-17 16:54:54] 📊 Generating trace plots...
+

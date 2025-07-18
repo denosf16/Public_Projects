@@ -1,0 +1,111 @@
+ Volume in drive C is OS
+ Volume Serial Number is 303F-BF3A
+
+ Directory of C:\Repos\Athlyticz_Projects\ATH_Biomech_Hit
+
+03/10/2025  06:56 PM    <DIR>          .
+03/10/2025  06:55 PM    <DIR>          ..
+03/10/2025  06:52 PM    <DIR>          data
+01/30/2025  05:52 PM    <DIR>          DataViz
+03/10/2025  06:56 PM                 0 directory_check.txt
+03/05/2025  10:12 PM    <DIR>          EDA
+03/10/2025  06:52 PM    <DIR>          Model
+03/10/2025  06:52 PM    <DIR>          outputs
+03/10/2025  06:52 PM    <DIR>          reports
+03/10/2025  06:52 PM             1,851 structure_creation.py
+               2 File(s)          1,851 bytes
+
+ Directory of C:\Repos\Athlyticz_Projects\ATH_Biomech_Hit\data
+
+03/10/2025  06:52 PM    <DIR>          .
+03/10/2025  06:56 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of C:\Repos\Athlyticz_Projects\ATH_Biomech_Hit\DataViz
+
+01/30/2025  05:52 PM    <DIR>          .
+03/10/2025  06:56 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of C:\Repos\Athlyticz_Projects\ATH_Biomech_Hit\EDA
+
+03/05/2025  10:12 PM    <DIR>          .
+03/10/2025  06:56 PM    <DIR>          ..
+03/05/2025  10:12 PM            27,943 ATH_Biomech_Hit_EDA.Rmd
+               1 File(s)         27,943 bytes
+
+ Directory of C:\Repos\Athlyticz_Projects\ATH_Biomech_Hit\Model
+
+03/10/2025  06:52 PM    <DIR>          .
+03/10/2025  06:56 PM    <DIR>          ..
+03/05/2025  10:12 PM            37,751 ATH_Biomech_Hit_StanGamm4.Rmd
+03/05/2025  10:12 PM        14,503,602 exit_velo_mod1.rds
+03/05/2025  10:12 PM        33,939,088 exit_velo_mod2.rds
+03/05/2025  10:12 PM        33,994,091 exit_velo_mod3.rds
+03/05/2025  10:12 PM            60,871 LA_EV_ModelComp.Rmd
+03/05/2025  10:12 PM        14,476,462 launch_angle_mod1.rds
+03/05/2025  10:12 PM        28,932,022 launch_angle_mod2.rds
+03/10/2025  06:52 PM    <DIR>          scripts
+03/05/2025  10:12 PM        26,666,547 wobacon_mod.rds
+               8 File(s)    152,610,434 bytes
+
+ Directory of C:\Repos\Athlyticz_Projects\ATH_Biomech_Hit\Model\scripts
+
+03/10/2025  06:52 PM    <DIR>          .
+03/10/2025  06:52 PM    <DIR>          ..
+03/10/2025  06:52 PM                34 constants.R
+03/10/2025  06:52 PM                35 data_preprocessing.R
+03/10/2025  06:52 PM                37 feature_selection.R
+03/10/2025  06:52 PM                20 helpers.R
+03/10/2025  06:52 PM                27 model_evaluation_LA_EV.R
+03/10/2025  06:52 PM                23 model_evaluation_wOBA.R
+03/10/2025  06:52 PM                32 predict_LA_EV.R
+03/10/2025  06:52 PM                28 predict_wOBA.R
+03/10/2025  06:52 PM                44 run_pipeline.R
+03/10/2025  06:52 PM                45 train_LA_EV_models.R
+03/10/2025  06:52 PM                26 train_wOBA_model.R
+              11 File(s)            351 bytes
+
+ Directory of C:\Repos\Athlyticz_Projects\ATH_Biomech_Hit\outputs
+
+03/10/2025  06:52 PM    <DIR>          .
+03/10/2025  06:56 PM    <DIR>          ..
+03/10/2025  06:52 PM    <DIR>          logs
+03/10/2025  06:52 PM    <DIR>          models
+03/10/2025  06:52 PM    <DIR>          plots
+03/10/2025  06:52 PM    <DIR>          predictions
+               0 File(s)              0 bytes
+
+ Directory of C:\Repos\Athlyticz_Projects\ATH_Biomech_Hit\outputs\logs
+
+03/10/2025  06:52 PM    <DIR>          .
+03/10/2025  06:52 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of C:\Repos\Athlyticz_Projects\ATH_Biomech_Hit\outputs\models
+
+03/10/2025  06:52 PM    <DIR>          .
+03/10/2025  06:52 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of C:\Repos\Athlyticz_Projects\ATH_Biomech_Hit\outputs\plots
+
+03/10/2025  06:52 PM    <DIR>          .
+03/10/2025  06:52 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of C:\Repos\Athlyticz_Projects\ATH_Biomech_Hit\outputs\predictions
+
+03/10/2025  06:52 PM    <DIR>          .
+03/10/2025  06:52 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of C:\Repos\Athlyticz_Projects\ATH_Biomech_Hit\reports
+
+03/10/2025  06:52 PM    <DIR>          .
+03/10/2025  06:56 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+     Total Files Listed:
+              22 File(s)    152,640,579 bytes
+              35 Dir(s)  1,619,955,691,520 bytes free

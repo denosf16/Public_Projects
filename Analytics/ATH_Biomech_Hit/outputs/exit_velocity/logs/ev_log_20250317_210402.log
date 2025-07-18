@@ -1,0 +1,20 @@
+[2025-03-17 21:04:02] 🚀 Starting Exit Velocity Model Training...
+
+[2025-03-17 21:04:02] 🔄 Loading cleaned dataset for Exit Velocity...
+
+[2025-03-17 21:04:02] ✅ No missing values detected. Proceeding...
+
+[2025-03-17 21:04:02] ✅ Numeric predictors standardized.
+
+[2025-03-17 21:04:02] 🔍 Checking data structure before training...
+
+[2025-03-17 21:04:03] 🚀 Training Base Exit Velocity Model...
+
+[2025-03-17 21:05:52] ✅ Base Exit Velocity Model saved.
+
+[2025-03-17 21:05:52] 🚀 Training Advanced Exit Velocity Model...
+
+[2025-03-17 21:07:32] ✅ Advanced Exit Velocity Model saved.
+
+[2025-03-17 21:07:32] 🎉 Exit Velocity model training completed successfully!
+

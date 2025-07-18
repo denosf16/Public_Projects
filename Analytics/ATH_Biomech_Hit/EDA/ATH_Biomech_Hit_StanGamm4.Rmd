@@ -1,0 +1,1133 @@
+---
+title: "ATH_Biomech_Hit"
+output: html_document
+date: "2025-01-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages("scam")
+```
+
+```{r}
+library(rstanarm)
+library(tidyverse)
+library(mgcv)
+library(loo)
+library(knitr)
+library(bayesplot)
+library(gridExtra)
+library(ggplot2)
+library(dplyr)
+library(scam)
+library(isotone)
+library(Metrics)
+```
+
+
+```{r}
+options(mc.cores = parallel::detectCores())
+h_rf_imputed$user <- as.factor(h_rf_imputed$user)
+```
+
+```{r}
+launch_angle_mod <- stan_gamm4(
+  la ~ hitter_side +s(user, bs="re"),
+  family=gaussian(),
+  data= h_rf_imputed,
+  chains=4,iter=2000,cores=4
+)
+```
+
+Key Considerations for this Model:
+
+1. Why use a Bayesian Approach?
+
+- Unlike frequentist GAMMs, a Bayesian approach accounts for uncertainty explicitly and provides full posterior distributions rather than point estimates.
+
+- This is particularly useful for hierarchical models, where we estimate both group-level (user) and population-level (hitter_side) effects.
+
+2. What the Splin (s(user, bs= "re)) is doing:
+
+- This term models user-specific random effects.
+
+- It allows different users to have their own launch angle deviations while shrinking extreme estimates toward to population mean (shrinkage regularization).
+
+- This helps avoid overfitting when there are users with limited data.
+
+3. Gaussian Family Assumption:
+
+- This assumes launch angle is normally distributed with constant variance.
+
+- If the data shows heteroskedasticity (variance changes across predictors), a different family like student-t (to handle heavy tails) or a varying dispersion model might be appropriate.
+
+4. Posterior Distribution Interpretation:
+
+- Instead of a single coefficient estimate (like in frequentist regression), Bayesian models produce a distribution of possible values for each parameter.
+
+- The posterior mean gives a central tendency, but we also get credible intervals, which reflect uncertainty in the estimates.
+
+5. Computational Cost and Convergence Issues:
+
+- Running 2000 iterations across 4 chains means 8,000 total samples.
+
+- The Hamiltonian Monte Carlo sampler used in STAN can struggle if:
+  -> There are high correlations between parameters (leading to slow mixing).
+  -> The posterior has complex curvature (which requires tuning adept_delta and max_treedepth).
+  
+- Increasing ITER and adjusting control parameters can help with convergence.
+
+```{r}
+plot(launch_angle_mod)
+summary(launch_angle_mod)
+```
+
+```{r}
+launch_angle_mod$fitted.values
+```
+
+
+Visualizing the Posterior:
+
+1. What it does:
+
+- Produces diagnostic plots that help asses parameter convergence and posterior distributions.
+
+- The specific plots may vary, but typically include:
+  -> Trace Plots: Show how well the Markov Chain Monte Carlo chains are mixing. 
+    -> Ideally, chains should overlap and look like "hairy caterpillars" rather than trends.
+    -> If you see drifting or one chain seperated, it suggests poor convergence.
+  -> Density Plots: Show the posterior distributions of model parameters.
+    -> If these distributions are multimodal, it could mean sampling issues.
+  -> Autocorrelation Plots: Help check how much parameters are correlated from one sample to the next.
+    -> High autocorrelation means inefficient sampling.
+    
+2. What to look for:
+
+- Chains should mix well (no divergence issues).
+  -> If chains do not mix well, consider increasing iter or adjusting adapt_delta.
+- Density plots should be smooth and unimodal.
+  -> If divergences exist, it may indicate model misspecification (non-Gaussian errors).
+  
+  
+Extracting Model Estimates:
+
+1. What it does:
+
+- Prints out posterior summaries for model parameters,
+
+Key outputs include:
+  -> Mean and 95% credible intervals: Gives an estimate of each parameter with uncertainty.
+  -> R-hat values: A diagnostic metric for convergence (ideally approaching 1)
+  -> Effective sample size: Indicates how many independent samples the model effectively has.
+  -> Standard deviation of posterior: Measures uncertainty in estimates.
+  
+2. What to look for:
+
+- R-hat approx. = 1, model has most likely converged
+  -> If R-hat > 1.1, model has poor convergence, needs more iterations/adjustments.
+- High n_eff, efficient sampling, reliable estimates
+  -> Low n_eff, high autocorrelation, suggests model inefficiency.
+- Credible intervals that exclude 0, suggests strong evidence for an effect.
+
+
+```{r}
+h_rf_imputed$residuals <- residuals(launch_angle_mod)
+
+ggplot(h_rf_imputed, aes(x = residuals)) +
+  geom_histogram(aes(y = ..density..), bins = 50, fill = "blue", alpha = 0.6) +
+  geom_density(color = "red")
+
+pp_check(launch_angle_mod)
+```
+
+1. Residual Analysis
+
+- Extracts residuals (observed values minus predicted values) from the fitted Bayesian GAMM, and stores them as a new column in our original dataset.
+
+- If residuals are randomly distributed with zero mean and constant variance, the model is likely well-specified.
+
+- If residuals show patterns or skew, the model might be missing an important predictor, have an incorrect likelihood family, or need a transformation.
+
+2. Issues to look for
+
+- Skewed distribution: could mean that Gaussian assumptions are inappropriate.
+- Heavy tails: Might suggest an underlying student-t or heteroskedastic error structure.
+- Bi modal or clustered patters: Could indicate missing categorical variables affecting the outcome.
+
+3. Posterior Predictive Check
+
+- What this does:
+  -> Generates posterior predictive distributions and compares them to observed data.
+  -> Uses simulated data from the model to see if it reasonably reproduces the observed data.
+  
+- What to look for:
+  -> Density Overlay Plot
+    - Compares simulated launch angles to observed launch angles.
+    - If the simulated distribution is similar to the observed distribution, the model captures key data       patterns
+    - Mismatches suggest missing predictors, incorrect likelihood choice, or poor fit.
+  -> Histogram overlay
+    - Plots simulated data histograms overlaid on observed data.
+    - GOOD FIT: Simulated data should resemble observed data.
+    - BAD FIT: If observed data has longer tails, the model may need a non-Gaussian error term.
+  -> Scatterplots
+    - Checks if residuals are evenly spread across predicted values.
+    
+```{r}
+# Extract posterior predictive draws (LIMIT to 500 for speed)
+y_rep <- posterior_predict(launch_angle_mod, draws = 500)
+
+# Ensure dimensions match (y should have same length as columns in y_rep)
+if (length(h_rf_imputed$la) != ncol(y_rep)) {
+  stop("Mismatch between observed data and posterior predictive draws. Check dataset.")
+}
+
+# Set default theme for bayesplot (prevents conflicts)
+theme_set(bayesplot::theme_default())
+
+# Create posterior predictive histogram
+p1 <- ppc_hist(y = h_rf_imputed$la, yrep = y_rep[1:50, ]) + 
+  ggtitle("Posterior Predictive Histogram (50 Draws)")
+
+# Create posterior predictive scatterplot
+p2 <- ppc_scatter_avg(y = h_rf_imputed$la, yrep = y_rep) + 
+  ggtitle("Posterior Predictive Scatterplot")
+
+```
+
+```{r}
+print(p1)
+print(p2)
+```
+
+
+```{r}
+# Create a scaled version of la while keeping the original values
+h_rf_imputed$la_scale <- scale(h_rf_imputed$la)
+
+summary(h_rf_imputed$la_scale)
+hist(h_rf_imputed$la_scale, breaks = 30, col = "blue", main = "Histogram of Scaled la")
+```
+
+-> We are standardizing the launch angle variable by converting it into z-scores. This ensures the mean of la_scale is 0, and the standard deviation of la_scale is 1.
+
+1. Why do we scale LA?
+
+- Improves model stability
+  -> Bayesian models (especially hierarchical models) perform better when predictors are on similar         scales.
+  -> Standardizing can prevent sampling issues by reducing extreme values.
+- Better prior specification
+  ->  If la has large values, priors on regression coefficients may be harder to interpret.
+  -> Scaling allows us to use default priors more effectively.
+- Improves convergence in STAN
+  -> Hamiltonian Monte Carlo works best with centered data.
+  -> Reducing the magnitude of values prevents poor mixing and slow sampling. 
+  
+```{r}
+ggplot() +
+  
+  geom_point(data = h_rf_imputed, aes(x = hand_speed_mag_swing_max_velo_x, y = bat_speed_mph_contact_x),
+             color = "blue", shape = 16, size = 2, alpha = 0.6)
+```
+  
+```{r}
+h_rf_imputed$aa_scale <- scale(h_rf_imputed$attack_angle_contact_x)
+h_rf_imputed$btac_scale <- scale(h_rf_imputed$bat_torso_angle_connection_x)
+h_rf_imputed$rel_scale <- scale(h_rf_imputed$rear_elbow_launchpos_x) 
+```
+
+```{r}
+set.seed(123)  # For reproducibility
+train_indices <- sample(seq_len(nrow(h_rf_imputed)), size = 0.7 * nrow(h_rf_imputed))
+train_data <- h_rf_imputed[train_indices, ]
+test_data <- h_rf_imputed[-train_indices, ]
+```
+
+
+```{r}
+# Optimized Bayesian GAMM 
+launch_angle_mod2 <- stan_gamm4(
+  la_scale ~ aa_scale + btac_scale + rel_scale + hitter_side + s(user, bs="re") + s(exit_velo_mph_x, bs = "tp"),  # Random effect for user
+  family = gaussian(),
+  data = train_data,
+  chains = 4,   # Reduce chains to optimize computational efficiency
+  iter = 4000,  # Sufficient iterations while managing runtime
+  cores = 4,
+  control = list(
+    adapt_delta = 0.99,  # Reduce divergences without excessive tuning
+    max_treedepth = 12   # Prevent over-exploration
+  )
+)
+```
+
+```{r}
+#preds = posterior_linpred(launch_angle_mod2, newdata = test_data, transform = TRUE)
+
+test_data$predicted_LA3 = colMeans(preds) * 
+                                  sd(test_data$la) + mean(test_data$la)
+```
+
+```{r}
+test
+```
+
+
+What is different from Model 1?
+
+1. Uses la_scale instead of la
+
+- Standardized response improves computational efficiency.
+- Makes model coefficients more interpretable on a standard deviation scale.
+
+2. Increased iterations 
+
+- More samples means better estimates of posterior distributions.
+- Helps stabilize estimates, especially with random effects.
+
+3. Tuning hyperparameters
+
+- adapt_delta = .99; reduces divergences, ensuring smoother sampling.
+- max_treedepth = 12; prevents inefficient sampling by limiting tree expansion.
+
+```{r}
+plot(launch_angle_mod2)
+summary(launch_angle_mod2)
+```
+
+```{r}
+#names(launch_angle_mod2)
+launch_angle_mod2$coefficients
+```
+
+
+```{r}
+bayesplot::mcmc_trace(launch_angle_mod2, pars = c("s(exit_velo_mph_x).5", "s(exit_velo_mph_x).6"))
+```
+```{r}
+data.frame(coefficient = rhat(launch_angle_mod2) %>%
+  names(), rhat = rhat(launch_angle_mod2) %>% as.data.frame() %>%
+  pull()) %>% arrange(desc(rhat))
+```
+
+
+```{r}
+#library(rstan)
+
+check_divergences(launch_angle_mod2)
+```
+
+1. Convergence and Model Fit Diagnostics (above)
+
+```{r}
+# Extract residuals
+h_rf_imputed$residuals2 <- residuals(launch_angle_mod2)
+
+# Plot residuals distribution
+ggplot(h_rf_imputed, aes(x = residuals2)) +
+  geom_histogram(aes(y = ..density..), bins = 50, fill = "blue", alpha = 0.6) +
+  geom_density(color = "red") +
+  ggtitle("Residuals Distribution for Model 2")
+```
+
+2. Residual analysis (above)
+
+```{r}
+# Generate posterior predictive samples (LIMITED to 500 draws for efficiency)
+y_rep2 <- posterior_predict(launch_angle_mod2, draws = 500)
+
+# Ensure dimensions match before proceeding
+if (length(h_rf_imputed$la) != ncol(y_rep2)) {
+  stop("Mismatch between observed data and posterior predictive draws. Check dataset.")
+}
+
+# General posterior predictive check
+pp_check(launch_angle_mod2)
+```
+
+3. Posterior Predictive checks (above)
+
+```{r}
+# Set bayesplot theme (avoids ggplot conflicts)
+theme_set(bayesplot::theme_default())
+
+# Posterior predictive histogram (50 draws)
+p3 <- ppc_hist(y = h_rf_imputed$la, yrep = y_rep2[1:50, ]) + 
+  ggtitle("Posterior Predictive Histogram (50 Draws)")
+
+# Posterior predictive scatterplot
+p4 <- ppc_scatter_avg(y = h_rf_imputed$la, yrep = y_rep2) + 
+  ggtitle("Posterior Predictive Scatterplot")
+```
+
+```{r}
+print(p3)
+print(p4)
+```
+
+
+4. Visualizing posterior predictive distributions (above)
+
+```{r}
+summary(launch_angle_mod)
+summary(launch_angle_mod2)
+```
+
+1. Model Summaries: Initial Review
+
+-> Compare parameter estimates and overall model summaries:
+
+- Provides posterior means, credible intervals, and R-hat values.
+- Helps detect convergence issues (R-hat> 1.1) or large parameter uncertainty.
+- If model 2 has higher effective sample sizes (n_eff) and stable estimates, it is preferable.
+
+```{r}
+waic(launch_angle_mod)
+waic(launch_angle_mod2)
+
+loo(launch_angle_mod)
+loo(launch_angle_mod2)
+```
+
+2. Model Fit and Overfitting Assessment: WAIC and LOO
+
+-> Evaluate in-sample predictive accuracy and detect overfitting:
+
+-> WAIC (Watanabe-Akaike Information Criterion)
+  - Lower WAIC values indicate a batter model fit.
+  - p_waic (Effective number of parameters) should be reasonable (high values = overfitting risk)
+
+-> LOO (Leave One Out Cross Validation)
+  - More robust than WAIC but still sensitive to model complexity.
+  - Large Pareto k values (>1) suggest LOO is unreliable.
+  - elpd_loo (Expected Log Predictive Density) compares models directly (higher is better).
+
+```{r}
+kfold(launch_angle_mod, K = 5)
+kfold(launch_angle_mod2, K = 5)
+```
+
+3. Out of Sample Evaluation: K-Fold Cross-Validation
+
+-> Evaluate generalization performance on unseen data.
+
+- Unlike WAIC/LOO, K-Fold CV actually tests out of sample performance.
+- If Model 2 has a better elpd_kfold score, it generalizes better.
+- Lower kfoldic values indicate a better model.
+
+```{r}
+# Create a comparison data frame with the new results
+comparison_results <- data.frame(
+  `Test/Metric` = c(
+    "WAIC - Expected Log Predictive Density (elpd_waic)",
+    "WAIC - Overfitting Indicator (p_waic)",
+    "WAIC - Model Fit Score (waic)",
+    "LOO - Expected Log Predictive Density (elpd_loo)",
+    "LOO - Overfitting Indicator (p_loo)",
+    "LOO - Model Fit Score (looic)",
+    "Pareto k Diagnostic (Ideal: < 0.7)",
+    "10-Fold CV - Expected Log Predictive Density (elpd_kfold)",
+    "10-Fold CV - Overfitting Indicator (p_kfold)",
+    "10-Fold CV - Model Fit Score (kfoldic)"
+  ),
+  `Model 1` = c(
+    "-168,420.6 (Very Bad)",
+    "165,148.9 (High Overfitting)",
+    "336,841.1 (Worse)",
+    "-88,376.0 (Unstable)",
+    "85,104.3 (High Overfitting)",
+    "176,751.9 (Bad Fit)",
+    "677/677 > 1.0 (Bad)",
+    "-2,742.6 (Worse)",
+    "-529.0",
+    "5,485.3 (Worse)"
+  ),
+  `Model 2` = c(
+    "-169,797.1 (Even Worse)",
+    "168,265.4 (Higher Overfitting)",
+    "339,594.2 (Worst)",
+    "-106,184.4 (Unstable)",
+    "104,652.6 (Worse Overfitting)",
+    "212,368.7 (Worse Fit)",
+    "677/677 > 1.0 (Bad)",
+    "-980.0 (Better)",
+    "-551.7 (Better)",
+    "1,960.0 (Better)"
+  ),
+  `Best Model / Conclusion` = c(
+    "Neither (Both Bad, WAIC Unreliable)",
+    "Neither (Both Highly Overfit)",
+    "Neither (Both WAICs Are Too High)",
+    "Neither (LOO Estimates Are Unstable)",
+    "Neither (Extreme Overfitting)",
+    "Neither (LOO Model Fit Is Poor)",
+    "LOO Unusable (All Pareto k > 1)",
+    "**Model 2 (Much Better Fit)** ✅",
+    "**Model 2 (Less Overfitting)** ✅",
+    "**Model 2 (Lower Predictive Error)** ✅"
+  ),
+  stringsAsFactors = FALSE
+)
+
+# Print the table
+kable(comparison_results, caption = "Comparison of Bayesian Model Evaluation Metrics")
+```
+
+Final evaluations:
+
+-> WAIC and LOO indicate both models overfit (Model 1 performs better than Model 2)
+-> LOO is unreliable because Pareto k-values are too high.
+-> K-Fold CV suggests Model 2 generalizes better than Model 1, making it the preferred choice. 
+
+
+```{r}
+# Model 1 Predictions (Direct)
+h_rf_imputed$predicted_la <- predict(launch_angle_mod, type = "response")
+
+# Model 2 Predictions (Scale-Adjusted)
+h_rf_imputed$predicted_la2 <- predict(launch_angle_mod2, type = "response") * 
+                                  sd(h_rf_imputed$la) + mean(h_rf_imputed$la)
+```
+
+```{r}
+# Plot for Model 1 Predictions
+p5 <- ggplot(h_rf_imputed, aes(x = predicted_la, y = la)) +
+  geom_point(alpha = 0.2, color = "black") +
+  geom_abline(slope = 1, intercept = 0, color = "red") +
+  labs(title = "Model 1: Predicted vs. Actual LA", x = "Predicted LA (Mod 1)", y = "Actual LA") +
+  theme_minimal()
+
+# Plot for Model 2 Predictions (Scaled)
+p6 <- ggplot(h_rf_imputed, aes(x = predicted_la2, y = la)) +
+  geom_point(alpha = 0.2, color = "black") +
+  geom_abline(slope = 1, intercept = 0, color = "red") +
+  labs(title = "Model 2: Predicted vs. Actual LA (Scaled Adjusted)", x = "Predicted LA (Mod 2)", y = "Actual LA") +
+  theme_minimal()
+
+# Display both plots side by side
+grid.arrange(p5, p6, ncol = 2)
+```
+
+```{r}
+ggplot(h_rf_imputed, aes(x = predicted_la2, y = exit_velo_mph_x)) +
+  geom_point(alpha = 0.2, color = "black") +
+  geom_smooth(method = "loess", color = "blue", se = TRUE) +
+  labs(title = "Exit Velocity vs. Predicted Launch Angle",
+       x = "Predicted Launch Angle",
+       y = "Exit Velocity (mph)") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(h_rf_imputed, aes(x = attack_angle_contact_x, y = exit_velo_mph_x)) +
+  geom_point(alpha = 0.2, color = "black") +
+  geom_smooth(method = "loess", color = "blue", se = TRUE) +
+  labs(title = "Exit Velocity vs. Attack Angle",
+       x = "Attack Angle",
+       y = "Exit Velocity (mph)") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(h_rf_imputed, aes(x = predicted_la2, y = attack_angle_contact_x)) +
+  geom_point(alpha = 0.2, color = "black") +
+  geom_smooth(method = "loess", color = "blue", se = TRUE) +
+  labs(title = "Attack Angle vs. Predicted Launch Angle",
+       x = "Predicted Launch Angle",
+       y = "Attack Angle") +
+  theme_minimal()
+```
+
+
+```{r}
+ggplot(h_rf_imputed, aes(x = exit_velo_mph_x)) +
+  geom_histogram(bins = 50, fill = "blue", alpha = 0.6) +
+  geom_density(color = "red") +
+  labs(title = "Distribution of Exit Velocity", x = "Exit Velocity (mph)", y = "Density")
+```
+
+```{r}
+ggplot(h_rf_imputed, aes(x = attack_angle_contact_x)) +
+  geom_histogram(bins = 50, fill = "blue", alpha = 0.6) +
+  geom_density(color = "red") +
+  labs(title = "Distribution of Attack Angle", x = "Attack Angle", y = "Density")
+```
+
+below this create velo model
+
+```{r}
+# Create a scaled version of EV while keeping the original values
+h_rf_imputed$ev_scale <- scale(h_rf_imputed$exit_velo_mph_x)
+
+summary(h_rf_imputed$ev_scale)
+hist(h_rf_imputed$ev_scale, breaks = 30, col = "blue", main = "Histogram of Scaled EV")
+```
+
+```{r}
+h_rf_imputed$poi_z_scale <- scale(h_rf_imputed$poi_z)
+h_rf_imputed$bat_speed_mph_contact_x_scale <- scale(h_rf_imputed$bat_speed_mph_contact_x)
+h_rf_imputed$torso_stride_max_z_scale <- scale(h_rf_imputed$torso_stride_max_z)
+h_rf_imputed$pelvis_angular_velocity_maxhss_x_scale <- scale(h_rf_imputed$pelvis_angular_velocity_maxhss_x)
+h_rf_imputed$max_cog_velo_x_scale <- scale(h_rf_imputed$max_cog_velo_x)
+```
+
+
+```{r}
+exit_velo_mod <- stan_gamm4(
+  ev_scale ~ bat_speed_mph_contact_x_scale + poi_z_scale + torso_stride_max_z_scale + pelvis_angular_velocity_maxhss_x_scale + max_cog_velo_x_scale + hitter_side + s(user, bs="re"),  # Random effect for user
+  family = gaussian(),
+  data = h_rf_imputed,
+  chains = 4,   # Reduce chains to optimize computational efficiency
+  iter = 6000,  # Sufficient iterations while managing runtime
+  cores = 4,
+  control = list(
+    adapt_delta = 0.99,  # Reduce divergences without excessive tuning
+    max_treedepth = 12   # Prevent over-exploration
+  )
+)
+```
+
+```{r}
+plot(exit_velo_mod)
+summary(exit_velo_mod)
+```
+
+```{r}
+# Extract residuals
+h_rf_imputed$residuals_ev1 <- residuals(exit_velo_mod)
+
+# Plot residuals distribution
+ggplot(h_rf_imputed, aes(x = residuals_ev1)) +
+  geom_histogram(aes(y = ..density..), bins = 50, fill = "blue", alpha = 0.6) +
+  geom_density(color = "red") +
+  ggtitle("Residuals Distribution for EV Model 1")
+```
+
+```{r}
+# Generate posterior predictive samples (LIMITED to 500 draws for efficiency)
+y_rep_ev1 <- posterior_predict(exit_velo_mod, draws = 500)
+
+# General posterior predictive check
+pp_check(exit_velo_mod)
+```
+
+```{r}
+# Set bayesplot theme (avoids ggplot conflicts)
+theme_set(bayesplot::theme_default())
+
+# Posterior predictive histogram (50 draws)
+p7 <- ppc_hist(y = h_rf_imputed$exit_velo_mph_x, yrep = y_rep_ev1[1:50, ]) + 
+  ggtitle("Posterior Predictive Histogram (50 Draws)")
+
+# Posterior predictive scatterplot
+p8 <- ppc_scatter_avg(y = h_rf_imputed$exit_velo_mph_x, yrep = y_rep_ev1) + 
+  ggtitle("Posterior Predictive Scatterplot")
+```
+
+```{r}
+print(p7)
+print(p8)
+```
+
+```{r}
+exit_velo_mod2 <- stan_gamm4(
+  ev_scale ~ predicted_la2 + attack_angle_contact_x + hitter_side + s(user, bs="re"),  # Random effect for user
+  family = gaussian(),
+  data = h_rf_imputed,
+  chains = 4,   # Reduce chains to optimize computational efficiency
+  iter = 6000,  # Sufficient iterations while managing runtime
+  cores = 4,
+  control = list(
+    adapt_delta = 0.99,  # Reduce divergences without excessive tuning
+    max_treedepth = 12   # Prevent over-exploration
+  )
+)
+```
+
+```{r}
+plot(exit_velo_mod2)
+summary(exit_velo_mod2)
+```
+
+```{r}
+# Extract residuals
+h_rf_imputed$residuals_ev2 <- residuals(exit_velo_mod2)
+
+# Plot residuals distribution
+ggplot(h_rf_imputed, aes(x = residuals_ev2)) +
+  geom_histogram(aes(y = ..density..), bins = 50, fill = "blue", alpha = 0.6) +
+  geom_density(color = "red") +
+  ggtitle("Residuals Distribution for EV Model 2")
+```
+
+```{r}
+# Generate posterior predictive samples (LIMITED to 500 draws for efficiency)
+y_rep_ev2 <- posterior_predict(exit_velo_mod2, draws = 500)
+
+# General posterior predictive check
+pp_check(exit_velo_mod2)
+```
+
+```{r}
+# Set bayesplot theme (avoids ggplot conflicts)
+theme_set(bayesplot::theme_default())
+
+# Posterior predictive histogram (50 draws)
+p9 <- ppc_hist(y = h_rf_imputed$exit_velo_mph_x, yrep = y_rep_ev1[1:50, ]) + 
+  ggtitle("Posterior Predictive Histogram (50 Draws)")
+
+# Posterior predictive scatterplot
+p10 <- ppc_scatter_avg(y = h_rf_imputed$exit_velo_mph_x, yrep = y_rep_ev1) + 
+  ggtitle("Posterior Predictive Scatterplot")
+```
+
+```{r}
+print(p9)
+print(p10)
+```
+
+```{r}
+summary(exit_velo_mod)
+summary(exit_velo_mod2)
+```
+
+```{r}
+waic(exit_velo_mod)
+waic(exit_velo_mod2)
+
+loo(exit_velo_mod)
+loo(exit_velo_mod2)
+```
+
+```{r}
+kfold(exit_velo_mod, K = 5)
+#kfold(exit_velo_mod2, K = 5)
+```
+
+```{r}
+kfold(exit_velo_mod2, K = 5)
+```
+
+
+```{r}
+# Create a comparison data frame for Exit Velocity models
+comparison_results <- data.frame(
+  `Test/Metric` = c(
+    "WAIC - Expected Log Predictive Density (elpd_waic)",
+    "WAIC - Overfitting Indicator (p_waic)",
+    "WAIC - Model Fit Score (waic)",
+    "LOO - Expected Log Predictive Density (elpd_loo)",
+    "LOO - Overfitting Indicator (p_loo)",
+    "LOO - Model Fit Score (looic)",
+    "Pareto k Diagnostic (Ideal: < 0.7)",
+    "10-Fold CV - Expected Log Predictive Density (elpd_kfold)",
+    "10-Fold CV - Overfitting Indicator (p_kfold)",
+    "10-Fold CV - Model Fit Score (kfoldic)"
+  ),
+  `Exit Velo Model 1` = c(
+    "-831,299.2 (Very Bad)",
+    "829,839.6 (Extreme Overfitting)",
+    "1,662,598.4 (Terrible)",
+    "-247,634.2 (Unstable)",
+    "246,174.6 (Extreme Overfitting)",
+    "495,268.5 (Poor Fit)",
+    "677/677 > 1.0 (Bad)",
+    "-628.7 (Very Poor)",
+    "-831.0",
+    "1,257.3 (Worse)"
+  ),
+  `Exit Velo Model 2` = c(
+    "-759,804.8 (Slightly Better)",
+    "758,355.6 (Still Overfitting)",
+    "1,519,609.6 (Still Bad)",
+    "-228,037.8 (Unstable)",
+    "226,588.6 (Still Overfitting)",
+    "456,075.5 (Marginally Better)",
+    "677/677 > 1.0 (Bad)",
+    "-645.6 (Better)",
+    "-803.6",
+    "1,291.2 (Better)"
+  ),
+  `Best Model / Conclusion` = c(
+    "Neither (Both Struggle, WAIC Unreliable)",
+    "Neither (Both Highly Overfit)",
+    "Neither (WAICs Are Still High)",
+    "Neither (LOO Estimates Unstable)",
+    "Neither (Persistent Overfitting)",
+    "Neither (Marginal Improvement)",
+    "LOO Unusable (All Pareto k > 1)",
+    "**Model 2 (Slight Improvement)** ✅",
+    "**Model 2 (Slightly Less Overfitting)** ✅",
+    "**Model 2 (Marginally Better)** ✅"
+  ),
+  stringsAsFactors = FALSE
+)
+
+# Print the table in R Markdown
+kable(comparison_results, caption = "Comparison of Bayesian Model Evaluation Metrics - Exit Velocity")
+```
+
+
+```{r}
+# Model 1 Predictions (Direct)
+h_rf_imputed$predicted_ev <- predict(exit_velo_mod, type = "response") * 
+                                  sd(h_rf_imputed$exit_velo_mph_x) + mean(h_rf_imputed$exit_velo_mph_x)
+
+# Model 2 Predictions (Scale-Adjusted)
+h_rf_imputed$predicted_ev2 <- predict(exit_velo_mod2, type = "response") * 
+                                  sd(h_rf_imputed$exit_velo_mph_x) + mean(h_rf_imputed$exit_velo_mph_x)
+```
+
+```{r}
+# Plot for Model 1 Predictions
+p11 <- ggplot(h_rf_imputed, aes(x = predicted_ev, y = exit_velo_mph_x)) +
+  geom_point(alpha = 0.2, color = "black") +
+  geom_abline(slope = 1, intercept = 0, color = "red") +
+  labs(title = "Model 1: Predicted vs. Actual EV", x = "Predicted EV (Mod 1)", y = "Actual EV") +
+  theme_minimal()
+
+# Plot for Model 2 Predictions (Scaled)
+p12 <- ggplot(h_rf_imputed, aes(x = predicted_ev2, y = exit_velo_mph_x)) +
+  geom_point(alpha = 0.2, color = "black") +
+  geom_abline(slope = 1, intercept = 0, color = "red") +
+  labs(title = "Model 2: Predicted vs. Actual EV (Scaled Adjusted)", x = "Predicted EV (Mod 2)", y = "Actual EV") +
+  theme_minimal()
+
+# Display both plots side by side
+grid.arrange(p11, p12, ncol = 2)
+```
+
+```{r}
+h_rf_imputed <- h_rf_imputed %>%
+  mutate(res = str_trim(res))
+
+h_rf_imputed <- h_rf_imputed %>%
+  mutate(cleaned_res = case_when(
+    # Singles
+    str_detect(res, "^1B") ~ "1B",
+    # Doubles
+    str_detect(res, "^2B") ~ "2B",
+    # Triples
+    str_detect(res, "^3B") ~ "3B",
+    # Home Runs
+    res == "HR" ~ "HR",
+    
+    # Groundouts
+    res %in% c("6-3", "4-3", "5-3", "U3") ~ "Groundout",
+    
+    # Flyouts
+    str_detect(res, "^F[0-9]") ~ "Flyout",
+    
+    # Exclude "Foul" and "2B-0" explicitly
+    res %in% c("Foul", "2B-0") ~ NA_character_,
+    
+    # Default (unknown/missing values)
+    TRUE ~ NA_character_
+  ))
+
+# Create WOBACON column based on cleaned_res
+h_rf_imputed <- h_rf_imputed %>%
+  mutate(WOBACON = case_when(
+    cleaned_res == "1B" ~ 0.90,
+    cleaned_res == "2B" ~ 1.30,
+    cleaned_res == "3B" ~ 1.55,
+    cleaned_res == "HR" ~ 1.95,
+    cleaned_res %in% c("Groundout", "Flyout") ~ 0.00,
+    TRUE ~ NA_real_  # Preserve missing values
+  ))
+
+# Print updated dataset
+print(h_rf_imputed %>% select(res, cleaned_res, WOBACON))
+```
+
+
+```{r}
+ggplot(h_rf_imputed, aes(x = predicted_la2, y = WOBACON)) +
+  geom_point(alpha = 0.2, color = "black") +
+  geom_smooth(method = "loess", color = "blue", se = TRUE) +
+  labs(title = "WOBACON vs. Predicted Launch Angle",
+       x = "Predicted Launch Angle",
+       y = "WOBACON") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(h_rf_imputed, aes(x = predicted_ev2, y = WOBACON)) +
+  geom_point(alpha = 0.2, color = "black") +
+  geom_smooth(method = "loess", color = "blue", se = TRUE) +
+  labs(title = "WOBACON vs. Predicted Exit Velo",
+       x = "Predicted Exit Velo",
+       y = "WOBACON") +
+  theme_minimal()
+```
+
+```{r}
+# Create a calibration dataset instead of modifying h_rf_imputed
+calibration_data <- h_rf_imputed %>%
+  transmute(
+    actual_la = la,
+    predicted_la = predicted_la,
+    predicted_la2 = predicted_la2,
+    actual_ev = exit_velo_mph_x,
+    predicted_ev = predicted_ev,
+    predicted_ev2 = predicted_ev2,
+    la_residual = la - predicted_la,
+    la2_residual = la - predicted_la2,
+    ev_residual = exit_velo_mph_x - predicted_ev,
+    ev2_residual = exit_velo_mph_x - predicted_ev2,
+    la_abs_error = abs(la - predicted_la),
+    la2_abs_error = abs(la - predicted_la2),
+    ev_abs_error = abs(exit_velo_mph_x - predicted_ev),
+    ev2_abs_error = abs(exit_velo_mph_x - predicted_ev2)
+  )
+```
+
+```{r}
+# Compute MAE and MBE for launch angle and exit velocity predictions
+la_mae <- mean(calibration_data$la_abs_error, na.rm = TRUE)
+la2_mae <- mean(calibration_data$la2_abs_error, na.rm = TRUE)
+
+ev_mae <- mean(calibration_data$ev_abs_error, na.rm = TRUE)
+ev2_mae <- mean(calibration_data$ev2_abs_error, na.rm = TRUE)
+
+la_mbe <- mean(calibration_data$la_residual, na.rm = TRUE)
+la2_mbe <- mean(calibration_data$la2_residual, na.rm = TRUE)
+
+ev_mbe <- mean(calibration_data$ev_residual, na.rm = TRUE)
+ev2_mbe <- mean(calibration_data$ev2_residual, na.rm = TRUE)
+
+# Print results
+cat("Launch Angle MAE (predicted_la):", la_mae, "\n")
+cat("Launch Angle MAE (predicted_la2):", la2_mae, "\n")
+cat("Launch Angle MBE (Bias) (predicted_la):", la_mbe, "\n")
+cat("Launch Angle MBE (Bias) (predicted_la2):", la2_mbe, "\n\n")
+
+cat("Exit Velocity MAE (predicted_ev):", ev_mae, "\n")
+cat("Exit Velocity MAE (predicted_ev2):", ev2_mae, "\n")
+cat("Exit Velocity MBE (Bias) (predicted_ev):", ev_mbe, "\n")
+cat("Exit Velocity MBE (Bias) (predicted_ev2):", ev2_mbe, "\n")
+```
+```{r}
+# Scatter plots for predicted vs. actual values
+ggplot(calibration_data, aes(x = predicted_la, y = actual_la)) +
+  geom_point(alpha = 0.5) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Actual vs. Predicted Launch Angle",
+       x = "Predicted Launch Angle",
+       y = "Actual Launch Angle") +
+  theme_minimal()
+
+ggplot(calibration_data, aes(x = predicted_la2, y = actual_la)) +
+  geom_point(alpha = 0.5) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Actual vs. Updated Predicted Launch Angle",
+       x = "Updated Predicted Launch Angle",
+       y = "Actual Launch Angle") +
+  theme_minimal()
+
+ggplot(calibration_data, aes(x = predicted_ev, y = actual_ev)) +
+  geom_point(alpha = 0.5) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Actual vs. Predicted Exit Velocity",
+       x = "Predicted Exit Velocity",
+       y = "Actual Exit Velocity") +
+  theme_minimal()
+
+ggplot(calibration_data, aes(x = predicted_ev2, y = actual_ev)) +
+  geom_point(alpha = 0.5) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Actual vs. Updated Predicted Exit Velocity",
+       x = "Updated Predicted Exit Velocity",
+       y = "Actual Exit Velocity") +
+  theme_minimal()
+```
+
+```{r}
+# Residual plots to detect bias
+ggplot(calibration_data, aes(x = predicted_la, y = la_residual)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Residuals vs. Predicted Launch Angle",
+       x = "Predicted Launch Angle",
+       y = "Residuals (Actual - Predicted)") +
+  theme_minimal()
+
+ggplot(calibration_data, aes(x = predicted_la2, y = la2_residual)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Residuals vs. Updated Predicted Launch Angle",
+       x = "Updated Predicted Launch Angle",
+       y = "Residuals (Actual - Predicted)") +
+  theme_minimal()
+
+ggplot(calibration_data, aes(x = predicted_ev, y = ev_residual)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Residuals vs. Predicted Exit Velocity",
+       x = "Predicted Exit Velocity",
+       y = "Residuals (Actual - Predicted)") +
+  theme_minimal()
+
+ggplot(calibration_data, aes(x = predicted_ev2, y = ev2_residual)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Residuals vs. Updated Predicted Exit Velocity",
+       x = "Updated Predicted Exit Velocity",
+       y = "Residuals (Actual - Predicted)") +
+  theme_minimal()
+```
+
+```{r}
+# Histogram of residuals to check for bias distribution
+ggplot(calibration_data, aes(x = la_residual)) +
+  geom_histogram(bins = 30, fill = "blue", alpha = 0.6, color = "black") +
+  labs(title = "Histogram of Launch Angle Residuals",
+       x = "Residuals (Actual - Predicted)",
+       y = "Count") +
+  theme_minimal()
+
+ggplot(calibration_data, aes(x = la2_residual)) +
+  geom_histogram(bins = 30, fill = "blue", alpha = 0.6, color = "black") +
+  labs(title = "Histogram of Updated Launch Angle Residuals",
+       x = "Residuals (Actual - Predicted)",
+       y = "Count") +
+  theme_minimal()
+
+ggplot(calibration_data, aes(x = ev_residual)) +
+  geom_histogram(bins = 30, fill = "blue", alpha = 0.6, color = "black") +
+  labs(title = "Histogram of Exit Velocity Residuals",
+       x = "Residuals (Actual - Predicted)",
+       y = "Count") +
+  theme_minimal()
+
+ggplot(calibration_data, aes(x = ev2_residual)) +
+  geom_histogram(bins = 30, fill = "blue", alpha = 0.6, color = "black") +
+  labs(title = "Histogram of Updated Exit Velocity Residuals",
+       x = "Residuals (Actual - Predicted)",
+       y = "Count") +
+  theme_minimal()
+
+```
+
+```{r}
+actual_la <- calibration_data$actual_la
+predicted_la2 <- calibration_data$predicted_la2
+
+actual_ev <- calibration_data$actual_ev
+predicted_ev2 <- calibration_data$predicted_ev2
+
+# --- ISOTONIC REGRESSION ---
+# Fit Isotonic Regression for LA
+iso_la <- isoreg(predicted_la2, actual_la)
+calibration_data$calibrated_la2_iso <- approx(iso_la$x, iso_la$yf, xout=predicted_la2)$y
+
+# Fit Isotonic Regression for EV
+iso_ev <- isoreg(predicted_ev2, actual_ev)
+calibration_data$calibrated_ev2_iso <- approx(iso_ev$x, iso_ev$yf, xout=predicted_ev2)$y
+
+# --- SCAM (Shape-Constrained Additive Model) ---
+# Fit SCAM for LA
+scam_la <- scam(actual_la ~ s(predicted_la2, bs="mpd", k=10), family=gaussian)
+calibration_data$calibrated_la2_scam <- predict(scam_la, newdata=data.frame(predicted_la2))
+
+# Fit SCAM for EV
+scam_ev <- scam(actual_ev ~ s(predicted_ev2, bs="mpd", k=10), family=gaussian)
+calibration_data$calibrated_ev2_scam <- predict(scam_ev, newdata=data.frame(predicted_ev2))
+
+# --- Calculate MAE & Bias ---
+calculate_mae <- function(actual, predicted) mean(abs(actual - predicted))
+calculate_bias <- function(actual, predicted) mean(actual - predicted)
+
+# Compute errors for all models
+error_results <- data.frame(
+  Model = c("Original LA", "ISO Calibrated LA", "SCAM Calibrated LA",
+            "Original EV", "ISO Calibrated EV", "SCAM Calibrated EV"),
+  MAE = c(
+    calculate_mae(actual_la, predicted_la2),
+    calculate_mae(actual_la, calibration_data$calibrated_la2_iso),
+    calculate_mae(actual_la, calibration_data$calibrated_la2_scam),
+    calculate_mae(actual_ev, predicted_ev2),
+    calculate_mae(actual_ev, calibration_data$calibrated_ev2_iso),
+    calculate_mae(actual_ev, calibration_data$calibrated_ev2_scam)
+  ),
+  Bias = c(
+    calculate_bias(actual_la, predicted_la2),
+    calculate_bias(actual_la, calibration_data$calibrated_la2_iso),
+    calculate_bias(actual_la, calibration_data$calibrated_la2_scam),
+    calculate_bias(actual_ev, predicted_ev2),
+    calculate_bias(actual_ev, calibration_data$calibrated_ev2_iso),
+    calculate_bias(actual_ev, calibration_data$calibrated_ev2_scam)
+  )
+)
+
+# Print results
+print(error_results)
+```
+
+```{r}
+# --- Residuals by Hitter Side ---
+ggplot(h_rf_imputed, aes(x=hitter_side, y=residuals2)) +
+  geom_boxplot() +
+  ggtitle("Launch Angle Residuals by Hitter Side") +
+  ylab("Residual (Actual - Predicted LA)") +
+  xlab("Hitter Side")
+
+ggplot(h_rf_imputed, aes(x=hitter_side, y=residuals_ev2)) +
+  geom_boxplot() +
+  ggtitle("Exit Velocity Residuals by Hitter Side") +
+  ylab("Residual (Actual - Predicted EV)") +
+  xlab("Hitter Side")
+```
+
+
+```{r}
+WOBACON_mod <- stan_gamm4(
+  WOBACON ~ predicted_la2 + predicted_ev2 + hitter_side + s(user, bs="re"),  # Random effect for user
+  family = gaussian(),
+  data = h_rf_imputed,
+  chains = 4,   # Reduce chains to optimize computational efficiency
+  iter = 6000,  # Sufficient iterations while managing runtime
+  cores = 4,
+  control = list(
+    adapt_delta = 0.99,  # Reduce divergences without excessive tuning
+    max_treedepth = 12   # Prevent over-exploration
+  )
+)
+```
+
+```{r}
+launch_angle_mod2$fitted.values #trained sample predictions
+```
+
+
+```{r}
+saveRDS(exit_velo_mod,file = "exit_velo_mod1.rds")
+saveRDS(exit_velo_mod2,file = "exit_velo_mod2.rds")
+
+saveRDS(launch_angle_mod,file = "launch_angle_mod1.rds")
+saveRDS(launch_angle_mod2,file = "launch_angle_mod2.rds")
+```
+
+```{r}
+#setwd("C:/Repos/Athlyticz_Projects")
+```
+
+go thru each model and look at trace plots, rhat values for parameters
+train/test set for each of the 4 models
+at least two versions of the model in the train/test set (generate 2 dataframes, 1 train 1 test per model)
+ex. v1 will not include ev spline
+    v2 will include ev spline
+fitted values from model 
+column with actual LA (use RMSE to check with model has better predictions)
+which did better in sample, which did better out of sample
+LA,EV,wOBACON
+don't want to feed in a pred value worse than original 
+
+once we have the best version of each model, "hitter feature df"; predicted EV, predicted LA, predicted wOBACON, batspeed?attackangle?
+
+wOBACON -> aggregated pred ev, la, woba per user
+
+hbdc scan (library in R) and see the kinds of clusters
+minimum points = x

@@ -1,0 +1,36 @@
+[2025-03-19 15:49:08] 🚀 Starting Launch Angle Model Training...
+
+[2025-03-19 15:49:08] 🔄 Loading cleaned dataset for Launch Angle...
+
+[2025-03-19 15:49:08] ✅ No missing values detected. Proceeding...
+
+[2025-03-19 15:49:08] ✅ Numeric predictors and target scaling standardized and saved.
+
+[2025-03-19 15:49:08] 🔍 Checking data structure before training...
+
+[2025-03-19 15:49:08] ✅ Base Launch Angle Model already exists. Skipping training.
+
+[2025-03-19 15:49:08] ✅ Advanced Launch Angle Model already exists. Skipping training.
+
+[2025-03-19 15:49:08] ✅ Test set saved for prediction.
+
+[2025-03-19 15:49:08] 🎉 Launch Angle model training completed successfully!
+
+[2025-03-19 15:49:08] 🔄 Loading TEST dataset for LA predictions...
+
+[2025-03-19 15:49:08] ✅ No missing values detected. Proceeding with predictions...
+
+[2025-03-19 15:49:09] ✅ Base_LA Model loaded successfully.
+
+[2025-03-19 15:49:09] ✅ Advanced_LA Model loaded successfully.
+
+[2025-03-19 15:49:09] 🚀 Predicting with Base_LA Model...
+
+[2025-03-19 15:49:09] ✅ Base_LA predictions added and scaled back.
+
+[2025-03-19 15:49:09] 🚀 Predicting with Advanced_LA Model...
+
+[2025-03-19 15:49:10] ✅ Advanced_LA predictions added and scaled back.
+
+[2025-03-19 15:49:10] ✅ Test set predictions saved to: C:/Repos/Athlyticz_Projects/ATH_Biomech_Hit/outputs/launch_angle/la_predictions_test.csv
+

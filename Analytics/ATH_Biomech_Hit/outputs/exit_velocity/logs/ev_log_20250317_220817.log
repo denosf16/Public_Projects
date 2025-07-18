@@ -1,0 +1,20 @@
+[2025-03-17 22:08:17] 🔄 Loading TEST dataset for EV predictions...
+
+[2025-03-17 22:08:17] ✅ No missing values detected. Proceeding with predictions...
+
+[2025-03-17 22:08:17] ✅ Base_EV Model loaded successfully.
+
+[2025-03-17 22:08:18] ✅ Advanced_EV Model loaded successfully.
+
+[2025-03-17 22:08:18] 🔄 Generating posterior predictions on TEST SET ONLY...
+
+[2025-03-17 22:08:18] 🚀 Predicting with Base_EV Model...
+
+[2025-03-17 22:08:18] ❌ Prediction failed for Base_EV Model: replacement has 0 rows, data has 204
+
+[2025-03-17 22:08:18] 🚀 Predicting with Advanced_EV Model...
+
+[2025-03-17 22:08:18] ❌ Prediction failed for Advanced_EV Model: replacement has 0 rows, data has 204
+
+[2025-03-17 22:08:18] ✅ Test set predictions saved to: ev_predictions_test.csv
+

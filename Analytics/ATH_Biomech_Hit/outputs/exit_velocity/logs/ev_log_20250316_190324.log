@@ -1,0 +1,26 @@
+[2025-03-16 19:03:24] 🚀 Data preprocessing pipeline started...
+
+[2025-03-16 19:03:24] ✔ File already exists: C:/Repos/Athlyticz_Projects/ATH_Biomech_Hit/data/metadata.csv
+
+[2025-03-16 19:03:24] ✔ File already exists: C:/Repos/Athlyticz_Projects/ATH_Biomech_Hit/data/poi_metrics.csv
+
+[2025-03-16 19:03:24] ✔ File already exists: C:/Repos/Athlyticz_Projects/ATH_Biomech_Hit/data/hittrax.csv
+
+[2025-03-16 19:03:24] 📥 Loading datasets from DATA_PATH...
+
+[2025-03-16 19:03:24] 📊 Metadata rows: 677
+
+[2025-03-16 19:03:24] 📊 POI rows: 677
+
+[2025-03-16 19:03:24] 📊 HitTrax rows: 604
+
+[2025-03-16 19:03:24] 🔗 Merging datasets...
+
+[2025-03-16 19:03:24] 🧹 Removing duplicate columns & rows...
+
+[2025-03-16 19:03:24] 🛠️ Checking data types...
+
+[2025-03-16 19:03:24] 📉 Counting missing values...
+
+[2025-03-16 19:03:24] 🌲 Performing Random Forest Imputation...
+
