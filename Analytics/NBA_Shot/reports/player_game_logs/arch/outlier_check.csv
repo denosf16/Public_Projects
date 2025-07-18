@@ -1,0 +1,60 @@
+column,status,flag_reason
+PLAYER_ID,PASS,
+TEAM_ID,PASS,
+MIN,PASS,
+FGM,FAIL,290 outliers > 3.0 sigma
+FGA,FAIL,173 outliers > 3.0 sigma
+FG_PCT,PASS,
+FG3M,FAIL,457 outliers > 3.0 sigma
+FG3A,FAIL,244 outliers > 3.0 sigma
+FG3_PCT,PASS,
+FTM,FAIL,511 outliers > 3.0 sigma
+FTA,FAIL,454 outliers > 3.0 sigma
+FT_PCT,PASS,
+OREB,FAIL,360 outliers > 3.0 sigma
+DREB,FAIL,308 outliers > 3.0 sigma
+REB,FAIL,357 outliers > 3.0 sigma
+AST,FAIL,424 outliers > 3.0 sigma
+TOV,FAIL,303 outliers > 3.0 sigma
+STL,FAIL,383 outliers > 3.0 sigma
+BLK,FAIL,311 outliers > 3.0 sigma
+BLKA,FAIL,714 outliers > 3.0 sigma
+PF,PASS,
+PFD,FAIL,504 outliers > 3.0 sigma
+PTS,FAIL,228 outliers > 3.0 sigma
+PLUS_MINUS,FAIL,143 outliers > 3.0 sigma
+NBA_FANTASY_PTS,FAIL,151 outliers > 3.0 sigma
+DD2,FAIL,2247 outliers > 3.0 sigma
+TD3,FAIL,137 outliers > 3.0 sigma
+WNBA_FANTASY_PTS,FAIL,155 outliers > 3.0 sigma
+GP_RANK,PASS,
+W_RANK,PASS,
+L_RANK,PASS,
+W_PCT_RANK,PASS,
+MIN_RANK,PASS,
+FGM_RANK,PASS,
+FGA_RANK,PASS,
+FG_PCT_RANK,PASS,
+FG3M_RANK,PASS,
+FG3A_RANK,PASS,
+FG3_PCT_RANK,PASS,
+FTM_RANK,PASS,
+FTA_RANK,PASS,
+FT_PCT_RANK,PASS,
+OREB_RANK,PASS,
+DREB_RANK,PASS,
+REB_RANK,PASS,
+AST_RANK,PASS,
+TOV_RANK,PASS,
+STL_RANK,PASS,
+BLK_RANK,PASS,
+BLKA_RANK,PASS,
+PF_RANK,PASS,
+PFD_RANK,PASS,
+PTS_RANK,PASS,
+PLUS_MINUS_RANK,PASS,
+NBA_FANTASY_PTS_RANK,PASS,
+DD2_RANK,FAIL,2247 outliers > 3.0 sigma
+TD3_RANK,FAIL,137 outliers > 3.0 sigma
+WNBA_FANTASY_PTS_RANK,PASS,
+AVAILABLE_FLAG,PASS,

@@ -1,0 +1,14 @@
+column,status,flag_reason
+PLAYER_ID,PASS,
+GAME_ID,PASS,
+TIME_REMAINING,PASS,
+OT,FAIL,1123 outliers > 3.0 sigma
+SHOT_MADE,PASS,
+FGM,PASS,
+PTS,PASS,
+PTS_TYPE,PASS,
+CLOSEST_DEFENDER_PLAYER_ID,FAIL,52 outliers > 3.0 sigma
+SHOT_DIST,FAIL,101 outliers > 3.0 sigma
+TOUCH_TIME,FAIL,2703 outliers > 3.0 sigma
+DRIBBLES,FAIL,3194 outliers > 3.0 sigma
+SHOT_CLOCK,PASS,

@@ -1,0 +1,31 @@
+TEAM_ID,SEASON_YEAR,TEAM_CITY,TEAM_NAME,TEAM_ABBREVIATION,TEAM_CONFERENCE,TEAM_DIVISION,TEAM_CODE,TEAM_SLUG,W,L,PCT,CONF_RANK,DIV_RANK,MIN_YEAR,MAX_YEAR
+1610612737,2024-25,Atlanta,Hawks,ATL,East,Southeast,hawks,hawks,40,42,0.488,8,2,1949,2024
+1610612738,2024-25,Boston,Celtics,BOS,East,Atlantic,celtics,celtics,61,21,0.744,2,1,1946,2024
+1610612739,2024-25,Cleveland,Cavaliers,CLE,East,Central,cavaliers,cavaliers,64,18,0.78,1,1,1970,2024
+1610612740,2024-25,New Orleans,Pelicans,NOP,West,Southwest,pelicans,pelicans,21,61,0.256,14,5,2002,2024
+1610612741,2024-25,Chicago,Bulls,CHI,East,Central,bulls,bulls,39,43,0.476,9,5,1966,2024
+1610612742,2024-25,Dallas,Mavericks,DAL,West,Southwest,mavericks,mavericks,39,43,0.476,10,3,1980,2024
+1610612743,2024-25,Denver,Nuggets,DEN,West,Northwest,nuggets,nuggets,50,32,0.61,4,2,1976,2024
+1610612744,2024-25,Golden State,Warriors,GSW,West,Pacific,warriors,warriors,48,34,0.585,7,3,1946,2024
+1610612745,2024-25,Houston,Rockets,HOU,West,Southwest,rockets,rockets,52,30,0.634,2,1,1967,2024
+1610612746,2024-25,LA,Clippers,LAC,West,Pacific,clippers,clippers,50,32,0.61,5,2,1970,2024
+1610612747,2024-25,Los Angeles,Lakers,LAL,West,Pacific,lakers,lakers,50,32,0.61,3,1,1948,2024
+1610612748,2024-25,Miami,Heat,MIA,East,Southeast,heat,heat,37,45,0.451,10,3,1988,2024
+1610612749,2024-25,Milwaukee,Bucks,MIL,East,Central,bucks,bucks,48,34,0.585,5,3,1968,2024
+1610612750,2024-25,Minnesota,Timberwolves,MIN,West,Northwest,timberwolves,timberwolves,49,33,0.598,6,3,1989,2024
+1610612751,2024-25,Brooklyn,Nets,BKN,East,Atlantic,nets,nets,26,56,0.317,12,4,1976,2024
+1610612752,2024-25,New York,Knicks,NYK,East,Atlantic,knicks,knicks,51,31,0.622,3,2,1946,2024
+1610612753,2024-25,Orlando,Magic,ORL,East,Southeast,magic,magic,41,41,0.5,7,1,1989,2024
+1610612754,2024-25,Indiana,Pacers,IND,East,Central,pacers,pacers,50,32,0.61,4,2,1976,2024
+1610612755,2024-25,Philadelphia,76ers,PHI,East,Atlantic,sixers,sixers,24,58,0.293,13,5,1949,2024
+1610612756,2024-25,Phoenix,Suns,PHX,West,Pacific,suns,suns,36,46,0.439,11,5,1968,2024
+1610612757,2024-25,Portland,Trail Blazers,POR,West,Northwest,blazers,blazers,36,46,0.439,12,4,1970,2024
+1610612758,2024-25,Sacramento,Kings,SAC,West,Pacific,kings,kings,40,42,0.488,9,4,1948,2024
+1610612759,2024-25,San Antonio,Spurs,SAS,West,Southwest,spurs,spurs,34,48,0.415,13,4,1976,2024
+1610612760,2024-25,Oklahoma City,Thunder,OKC,West,Northwest,thunder,thunder,68,14,0.829,1,1,1967,2024
+1610612761,2024-25,Toronto,Raptors,TOR,East,Atlantic,raptors,raptors,30,52,0.366,11,3,1995,2024
+1610612762,2024-25,Utah,Jazz,UTA,West,Northwest,jazz,jazz,17,65,0.207,15,5,1974,2024
+1610612763,2024-25,Memphis,Grizzlies,MEM,West,Southwest,grizzlies,grizzlies,48,34,0.585,8,2,1995,2024
+1610612764,2024-25,Washington,Wizards,WAS,East,Southeast,wizards,wizards,18,64,0.22,15,5,1961,2024
+1610612765,2024-25,Detroit,Pistons,DET,East,Central,pistons,pistons,44,38,0.537,6,4,1948,2024
+1610612766,2024-25,Charlotte,Hornets,CHA,East,Southeast,hornets,hornets,19,63,0.232,14,4,1988,2024

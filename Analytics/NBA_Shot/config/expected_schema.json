@@ -1,0 +1,664 @@
+{
+    "dbo.etl_log_events": {
+        "log_id": {
+            "data_type": "int",
+            "is_nullable": "NO",
+            "ordinal_position": 1
+        },
+        "table_name": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 2
+        },
+        "column_name": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 3
+        },
+        "change_type": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 4
+        },
+        "org_val": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 5
+        },
+        "new_val": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 6
+        },
+        "row_id": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 7
+        },
+        "log_status": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 8
+        },
+        "error_level": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 9
+        },
+        "log_timestamp": {
+            "data_type": "datetime",
+            "is_nullable": "YES",
+            "ordinal_position": 10
+        },
+        "source_script": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 11
+        }
+    },
+    "dbo.player_game_logs": {
+        "SEASON_YEAR": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 1
+        },
+        "PLAYER_ID": {
+            "data_type": "int",
+            "is_nullable": "NO",
+            "ordinal_position": 2
+        },
+        "PLAYER_NAME": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 3
+        },
+        "NICKNAME": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 4
+        },
+        "TEAM_ID": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 5
+        },
+        "TEAM_ABBREVIATION": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 6
+        },
+        "TEAM_NAME": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 7
+        },
+        "GAME_ID": {
+            "data_type": "varchar",
+            "is_nullable": "NO",
+            "ordinal_position": 8
+        },
+        "GAME_DATE": {
+            "data_type": "datetime",
+            "is_nullable": "YES",
+            "ordinal_position": 9
+        },
+        "MATCHUP": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 10
+        },
+        "WL": {
+            "data_type": "char",
+            "is_nullable": "YES",
+            "ordinal_position": 11
+        },
+        "MIN": {
+            "data_type": "float",
+            "is_nullable": "YES",
+            "ordinal_position": 12
+        },
+        "FGM": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 13
+        },
+        "FGA": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 14
+        },
+        "FG_PCT": {
+            "data_type": "float",
+            "is_nullable": "YES",
+            "ordinal_position": 15
+        },
+        "FG3M": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 16
+        },
+        "FG3A": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 17
+        },
+        "FG3_PCT": {
+            "data_type": "float",
+            "is_nullable": "YES",
+            "ordinal_position": 18
+        },
+        "FTM": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 19
+        },
+        "FTA": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 20
+        },
+        "FT_PCT": {
+            "data_type": "float",
+            "is_nullable": "YES",
+            "ordinal_position": 21
+        },
+        "OREB": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 22
+        },
+        "DREB": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 23
+        },
+        "REB": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 24
+        },
+        "AST": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 25
+        },
+        "TOV": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 26
+        },
+        "STL": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 27
+        },
+        "BLK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 28
+        },
+        "BLKA": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 29
+        },
+        "PF": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 30
+        },
+        "PFD": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 31
+        },
+        "PTS": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 32
+        },
+        "PLUS_MINUS": {
+            "data_type": "float",
+            "is_nullable": "YES",
+            "ordinal_position": 33
+        },
+        "NBA_FANTASY_PTS": {
+            "data_type": "float",
+            "is_nullable": "YES",
+            "ordinal_position": 34
+        },
+        "DD2": {
+            "data_type": "bit",
+            "is_nullable": "YES",
+            "ordinal_position": 35
+        },
+        "TD3": {
+            "data_type": "bit",
+            "is_nullable": "YES",
+            "ordinal_position": 36
+        },
+        "WNBA_FANTASY_PTS": {
+            "data_type": "float",
+            "is_nullable": "YES",
+            "ordinal_position": 37
+        },
+        "GP_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 38
+        },
+        "W_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 39
+        },
+        "L_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 40
+        },
+        "W_PCT_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 41
+        },
+        "MIN_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 42
+        },
+        "FGM_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 43
+        },
+        "FGA_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 44
+        },
+        "FG_PCT_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 45
+        },
+        "FG3M_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 46
+        },
+        "FG3A_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 47
+        },
+        "FG3_PCT_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 48
+        },
+        "FTM_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 49
+        },
+        "FTA_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 50
+        },
+        "FT_PCT_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 51
+        },
+        "OREB_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 52
+        },
+        "DREB_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 53
+        },
+        "REB_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 54
+        },
+        "AST_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 55
+        },
+        "TOV_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 56
+        },
+        "STL_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 57
+        },
+        "BLK_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 58
+        },
+        "BLKA_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 59
+        },
+        "PF_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 60
+        },
+        "PFD_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 61
+        },
+        "PTS_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 62
+        },
+        "PLUS_MINUS_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 63
+        },
+        "NBA_FANTASY_PTS_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 64
+        },
+        "DD2_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 65
+        },
+        "TD3_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 66
+        },
+        "WNBA_FANTASY_PTS_RANK": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 67
+        },
+        "AVAILABLE_FLAG": {
+            "data_type": "bit",
+            "is_nullable": "YES",
+            "ordinal_position": 68
+        },
+        "MIN_SEC": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 69
+        }
+    },
+    "dbo.player_info": {
+        "PLAYER_ID": {
+            "data_type": "int",
+            "is_nullable": "NO",
+            "ordinal_position": 1
+        },
+        "PLAYER_NAME": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 2
+        },
+        "BIRTHDATE": {
+            "data_type": "date",
+            "is_nullable": "YES",
+            "ordinal_position": 3
+        },
+        "HEIGHT_INCHES": {
+            "data_type": "float",
+            "is_nullable": "YES",
+            "ordinal_position": 4
+        },
+        "COUNTRY": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 5
+        },
+        "DRAFT_YEAR": {
+            "data_type": "int",
+            "is_nullable": "NO",
+            "ordinal_position": 6
+        },
+        "DRAFT_ROUND": {
+            "data_type": "int",
+            "is_nullable": "NO",
+            "ordinal_position": 7
+        },
+        "DRAFT_NUMBER": {
+            "data_type": "int",
+            "is_nullable": "NO",
+            "ordinal_position": 8
+        },
+        "POSITION": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 9
+        },
+        "TEAM_ID": {
+            "data_type": "bigint",
+            "is_nullable": "YES",
+            "ordinal_position": 10
+        },
+        "TEAM_NAME": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 11
+        }
+    },
+    "dbo.player_info_analysis": {
+        "PLAYER_ID": {
+            "data_type": "int",
+            "is_nullable": "NO",
+            "ordinal_position": 1
+        },
+        "PLAYER_NAME": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 2
+        },
+        "BIRTHDATE": {
+            "data_type": "date",
+            "is_nullable": "YES",
+            "ordinal_position": 3
+        },
+        "HEIGHT_INCHES": {
+            "data_type": "float",
+            "is_nullable": "YES",
+            "ordinal_position": 4
+        },
+        "COUNTRY": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 5
+        },
+        "DRAFT_YEAR": {
+            "data_type": "int",
+            "is_nullable": "NO",
+            "ordinal_position": 6
+        },
+        "DRAFT_ROUND": {
+            "data_type": "int",
+            "is_nullable": "NO",
+            "ordinal_position": 7
+        },
+        "DRAFT_NUMBER": {
+            "data_type": "int",
+            "is_nullable": "NO",
+            "ordinal_position": 8
+        },
+        "POSITION": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 9
+        },
+        "TEAM_ID": {
+            "data_type": "bigint",
+            "is_nullable": "YES",
+            "ordinal_position": 10
+        },
+        "TEAM_NAME": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 11
+        }
+    },
+    "dbo.player_shot_logs": {
+        "SHOT_EVENT_ID": {
+            "data_type": "varchar",
+            "is_nullable": "NO",
+            "ordinal_position": 1
+        },
+        "PLAYER_NAME": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 2
+        },
+        "PLAYER_ID": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 3
+        },
+        "GAME_DATE": {
+            "data_type": "date",
+            "is_nullable": "YES",
+            "ordinal_position": 4
+        },
+        "GAME_ID": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 5
+        },
+        "MATCHUP": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 6
+        },
+        "TIME_REMAINING": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 7
+        },
+        "OT": {
+            "data_type": "bit",
+            "is_nullable": "YES",
+            "ordinal_position": 8
+        },
+        "SHOT_MADE": {
+            "data_type": "bit",
+            "is_nullable": "YES",
+            "ordinal_position": 9
+        },
+        "FGM": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 10
+        },
+        "PTS": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 11
+        },
+        "PTS_TYPE": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 12
+        },
+        "CLOSEST_DEFENDER": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 13
+        },
+        "CLOSEST_DEFENDER_PLAYER_ID": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 14
+        },
+        "SHOT_DIST": {
+            "data_type": "float",
+            "is_nullable": "YES",
+            "ordinal_position": 15
+        },
+        "TOUCH_TIME": {
+            "data_type": "float",
+            "is_nullable": "YES",
+            "ordinal_position": 16
+        },
+        "DRIBBLES": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 17
+        },
+        "SHOT_CLOCK": {
+            "data_type": "float",
+            "is_nullable": "YES",
+            "ordinal_position": 18
+        },
+        "LOCATION": {
+            "data_type": "char",
+            "is_nullable": "YES",
+            "ordinal_position": 19
+        },
+        "W": {
+            "data_type": "char",
+            "is_nullable": "YES",
+            "ordinal_position": 20
+        }
+    },
+    "dbo.team_info": {
+        "TEAM_ID": {
+            "data_type": "bigint",
+            "is_nullable": "NO",
+            "ordinal_position": 1
+        },
+        "TEAM_NAME": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 2
+        },
+        "TEAM_ABBREVIATION": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 3
+        },
+        "TEAM_CITY": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 4
+        },
+        "TEAM_CONFERENCE": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 5
+        },
+        "TEAM_DIVISION": {
+            "data_type": "varchar",
+            "is_nullable": "YES",
+            "ordinal_position": 6
+        },
+        "MIN_YEAR": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 7
+        },
+        "MAX_YEAR": {
+            "data_type": "int",
+            "is_nullable": "YES",
+            "ordinal_position": 8
+        }
+    }
+}
