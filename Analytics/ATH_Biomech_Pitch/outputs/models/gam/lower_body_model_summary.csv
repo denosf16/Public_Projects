@@ -1,0 +1,8 @@
+Feature,EDOF,Lambda
+max_torso_rotational_velo,66.79994486336723,[0.6]
+max_rotation_hip_shoulder_separation,66.79994486336723,[0.6]
+pelvis_anterior_tilt_fp,66.79994486336723,[0.6]
+max_cog_velo_x,66.79994486336723,[0.6]
+lead_knee_extension_from_fp_to_br,66.79994486336723,[0.6]
+lead_knee_transfer_fp_br,66.79994486336723,[0.6]
+rear_hip_generation_pkh_fp,66.79994486336723,[0.6]

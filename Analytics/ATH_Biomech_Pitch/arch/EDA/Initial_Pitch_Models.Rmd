@@ -1,0 +1,967 @@
+---
+title: "ATH_Biomech_Pitch_EDA"
+output: html_document
+date: "2025-02-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load required libraries
+options(mc.cores = parallel::detectCores())
+library(rstanarm)
+library(moments)
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+library(naniar)
+library(missRanger)
+library(VIM)
+library(dplyr)
+library(factoextra)
+library(stringr)
+library(cluster)
+library(dendextend)
+library(patchwork)
+library(moments)
+library(randomForest)
+library(minerva)
+library(Hmisc)
+library(knitr)
+library(kableExtra)
+library(car)
+```
+
+
+```{r}
+# Define file paths
+meta_url <- "https://raw.githubusercontent.com/drivelineresearch/openbiomechanics/main/baseball_pitching/data/metadata.csv"
+poi_url <- "https://raw.githubusercontent.com/drivelineresearch/openbiomechanics/main/baseball_pitching/data/poi/poi_metrics.csv"
+
+# Download files to a temporary location
+download.file(meta_url, destfile = "pitch_meta.csv", method = "libcurl")
+download.file(poi_url, destfile = "pitch_poi.csv", method = "libcurl")
+
+# Read the downloaded CSVs
+pitch_meta <- read.csv("pitch_meta.csv")
+pitch_poi <- read.csv("pitch_poi.csv")
+
+```
+
+```{r}
+# Select relevant columns from pitch_meta
+pitch_meta_selected <- pitch_meta %>%
+  select(session_pitch, user, session_mass_kg, session_height_m, age_yrs, playing_level)
+
+# Perform a left join to retain all data from pitch_poi
+pitch_data <- pitch_poi %>%
+  left_join(pitch_meta_selected, by = "session_pitch")
+
+# View the first few rows of the joined dataset
+head(pitch_data)
+```
+
+```{r}
+data_types_p <- data.frame(
+  Variable = names(pitch_data),
+  Data_Type = sapply(pitch_data, class)
+)
+```
+
+```{r}
+# Count missing values for each column
+missing_values_p <- colSums(is.na(pitch_data))
+
+# Filter and list columns with NA > 0
+columns_with_na_p <- missing_values_p[missing_values_p > 0]
+
+# Display the result
+print("Columns with missing values:")
+print(columns_with_na_p)
+```
+
+```{r}
+# Perform Random Forest Imputation using missRanger
+pitch_data_imp <- missRanger(pitch_data, 
+                                 pmm.k = 3,  # Predictive mean matching for better realism
+                                 num.trees = 100,  # Number of trees in the Random Forest
+                                 seed = 123,  # For reproducibility
+                                 verbose = 2) # Print progress
+
+
+sum(is.na(pitch_data_imp))
+```
+
+```{r}
+# List of columns that were imputed
+imputed_columns <- c("lead_hip_transfer_fp_br", "lead_hip_generation_fp_br", 
+                     "lead_hip_absorption_fp_br", "lead_knee_transfer_fp_br", 
+                     "lead_knee_generation_fp_br", "lead_knee_absorption_fp_br", 
+                     "rear_hip_transfer_pkh_fp", "rear_hip_generation_pkh_fp", 
+                     "rear_hip_absorption_pkh_fp", "rear_knee_transfer_pkh_fp", 
+                     "rear_knee_generation_pkh_fp", "rear_knee_absorption_pkh_fp", 
+                     "pelvis_lumbar_transfer_fp_br", "rear_grf_x_max", "rear_grf_y_max", 
+                     "rear_grf_z_max", "rear_grf_mag_max", "rear_grf_angle_at_max", 
+                     "lead_grf_x_max", "lead_grf_y_max", "lead_grf_z_max", 
+                     "lead_grf_mag_max", "lead_grf_angle_at_max", "peak_rfd_rear", 
+                     "peak_rfd_lead")
+
+# Create a copy of the dataset *before* imputation (Assuming `pitch_data` is the original dataset)
+pitch_data_before_imputation <- pitch_data  # Replace with actual pre-imputation dataset if needed
+
+# Create 'imputed_flag' column: Flag only the 8 rows that had missing values before imputation
+pitch_data_imp <- pitch_data_imp %>%
+  mutate(imputed_flag = ifelse(rowSums(is.na(select(pitch_data_before_imputation, all_of(imputed_columns)))) > 0, 1, 0))
+
+# Confirm that only 8 rows are flagged
+table(pitch_data_imp$imputed_flag)
+
+### ---- Generate Histograms for Imputed Columns ---- ###
+for (col in imputed_columns) {
+  p <- ggplot(pitch_data_imp, aes_string(x = col)) +
+    geom_histogram(binwidth = 5, fill = "blue", color = "black", alpha = 0.7) +
+    theme_minimal() +
+    labs(title = paste("Histogram of", col), x = col, y = "Count") +
+    theme(plot.title = element_text(hjust = 0.5))
+  print(p)  # Display each histogram
+}
+
+```
+
+```{r}
+for (col in imputed_columns) {
+  p2 <- ggplot(pitch_data_imp, aes_string(x = col, y = "pitch_speed_mph", color = "as.factor(imputed_flag)")) +
+    geom_point(alpha = 0.7, size = 1) +
+    theme_minimal() +
+    scale_color_manual(values = c("blue", "red"), labels = c("Not Imputed", "Imputed")) +
+    labs(title = paste("Pitch Speed vs", col), x = col, y = "Pitch Speed (mph)", color = "Imputed Data") +
+    theme(plot.title = element_text(hjust = 0.5))
+   print(p2)  # Display each scatterplot
+}
+```
+
+```{r}
+# Step 1: Check normality using Shapiro-Wilk test
+normality_results <- sapply(select(pitch_data_imp, where(is.numeric)), function(x) {
+  if (length(na.omit(x)) > 3) {  # Ensure enough data for the test
+    return(shapiro.test(na.omit(x))$p.value)
+  } else {
+    return(NA)
+  }
+})
+
+# Convert to a data frame
+normality_results_df <- data.frame(Variable = names(normality_results), 
+                                   P_Value = normality_results)
+
+# Classify variables as normal (TRUE) or non-normal (FALSE)
+normality_results_df <- normality_results_df %>%
+  mutate(Normal_Distribution = ifelse(P_Value > 0.05, TRUE, FALSE))
+
+# Step 2: Define Outlier Detection Functions
+
+# Function to detect Z-score outliers (for normal distributions)
+detect_z_outliers <- function(x) {
+  z_scores <- (x - mean(x, na.rm = TRUE)) / sd(x, na.rm = TRUE)
+  return(abs(z_scores) > 3)
+}
+
+# Function to detect IQR outliers (for non-normal distributions)
+detect_iqr_outliers <- function(x) {
+  q1 <- quantile(x, 0.25, na.rm = TRUE)
+  q3 <- quantile(x, 0.75, na.rm = TRUE)
+  iqr_value <- q3 - q1
+  return(x < (q1 - 1.5 * iqr_value) | x > (q3 + 1.5 * iqr_value))
+}
+
+# Step 3: Apply appropriate outlier detection method based on normality results
+pitch_data_imp <- pitch_data_imp %>%
+  mutate(across(where(is.numeric), ~ ifelse(
+    coalesce(normality_results_df$Normal_Distribution[match(cur_column(), normality_results_df$Variable)], FALSE), 
+    detect_z_outliers(.), 
+    detect_iqr_outliers(.)
+  ), .names = "{.col}_outlier"))
+
+# Step 4: Count number of outliers detected per column
+outlier_counts <- colSums(select(pitch_data_imp, ends_with("_outlier")), na.rm = TRUE)
+print("🚨 Outlier Counts Per Variable 🚨")
+print(outlier_counts)
+
+# Step 5: Filter and inspect rows with any outliers
+outlier_rows <- pitch_data_imp %>%
+  filter(if_any(ends_with("_outlier"), ~ . == TRUE))
+
+print("🚨 Outlier Rows Detected 🚨")
+print(outlier_rows)
+```
+
+```{r}
+# 🔹 **Select Only Numeric Columns**
+numeric_data <- pitch_data_imp %>% select(where(is.numeric))
+
+# 🔹 **Compute Correlation Matrix**
+cor_matrix <- cor(numeric_data, use = "complete.obs")
+
+# 🔹 **Set Correlation Threshold & Extract Highly Correlated Variables**
+cor_threshold <- 0.2  # Adjust as needed
+
+# Get variables highly correlated with pitch_speed_mph
+high_corr_vars_pitch_speed <- rownames(cor_matrix)[cor_matrix["pitch_speed_mph", ] > cor_threshold | 
+                                                   cor_matrix["pitch_speed_mph", ] < -cor_threshold]
+
+# 🔹 **Generate Heatmap Only if Correlated Variables Exist**
+if (length(high_corr_vars_pitch_speed) > 1) {
+  corrplot(cor_matrix[high_corr_vars_pitch_speed, high_corr_vars_pitch_speed], 
+           method = "color", tl.cex = 0.8, title = "Correlation Heatmap - Pitch Speed")
+}
+
+```
+
+```{r}
+# 🔹 **Exclude Unwanted Variables**
+exclude_vars <- c("session", "user", "session_mass_kg", "session_height_m", "age_yrs")  # Adjust as needed
+
+# 🔹 **Remove Excluded Variables from High-Correlation Predictor Lists**
+if (exists("high_corr_vars_pitch_speed")) {
+  high_corr_vars_pitch_speed <- setdiff(high_corr_vars_pitch_speed, exclude_vars)
+} else {
+  high_corr_vars_pitch_speed <- character(0)  # Avoids NULL errors
+}
+
+# 🔹 **Train Random Forest Model for Pitch Speed**
+if (length(high_corr_vars_pitch_speed) > 1) {
+  
+  rf_pitch_speed <- randomForest(
+    pitch_speed_mph ~ ., 
+    data = na.omit(pitch_data_imp %>% select(pitch_speed_mph, all_of(high_corr_vars_pitch_speed))), 
+    importance = TRUE, ntree = 2500
+  )
+  
+  # Extract Feature Importance
+  importance_pitch_speed <- importance(rf_pitch_speed)
+  importance_pitch_speed_df <- data.frame(
+    Variable = rownames(importance_pitch_speed),
+    Importance = importance_pitch_speed[, "IncNodePurity"]
+  )
+
+  # 🔹 **Ensure importance values exist before plotting**
+  if (nrow(importance_pitch_speed_df) > 0 && sum(importance_pitch_speed_df$Importance) > 0) {
+    
+    print("🔍 Feature Importance for Pitch Speed:")
+    print(importance_pitch_speed_df)  # Debugging
+    
+    # 🔹 **Plot feature importance**
+    p_pitch_speed <- ggplot(importance_pitch_speed_df, aes(x = reorder(Variable, Importance), y = Importance)) +
+      geom_bar(stat = "identity", fill = "blue") +
+      coord_flip() +
+      labs(title = "Feature Importance - Pitch Speed",
+           x = "Variable",
+           y = "Importance (IncNodePurity)") +
+      theme_minimal()
+    
+    print(p_pitch_speed)  # Force ggplot to render
+  }
+}
+```
+
+```{r}
+# Remove pitch_speed_mph from the predictor list (if it exists)
+high_corr_vars_pitch_speed <- setdiff(high_corr_vars_pitch_speed, "pitch_speed_mph")
+
+# Compute MIC for pitch speed using high-correlation variables (excluding pitch_speed_mph)
+mic_results_pitch_speed <- apply(pitch_data_imp %>% select(all_of(high_corr_vars_pitch_speed)), 2, function(x) {
+  mine(x, pitch_data_imp$pitch_speed_mph)$MIC
+})
+
+# Convert MIC results to a dataframe
+mic_pitch_speed_df <- data.frame(Variable = names(mic_results_pitch_speed), MIC = mic_results_pitch_speed)
+
+# Plot MIC results
+ggplot(mic_pitch_speed_df, aes(x = reorder(Variable, MIC), y = MIC)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +
+  labs(title = "MIC Score - Pitch Speed (Excluding Itself)",
+       x = "Variable",
+       y = "MIC Score") +
+  theme_minimal()
+```
+
+```{r}
+# 🔹 Ensure predictor variables do not include the target variable
+high_corr_vars_pitch_speed <- setdiff(high_corr_vars_pitch_speed, "pitch_speed_mph")
+
+# Loop through each predictor and generate scatterplots
+for (var in high_corr_vars_pitch_speed) {
+  p <- ggplot(pitch_data_imp, aes_string(x = var, y = "pitch_speed_mph")) +
+    geom_point(alpha = 0.6, color = "blue") +  # Scatterplot points
+    geom_smooth(method = "loess", color = "red", se = FALSE, linetype = "solid") +  # LOESS trendline
+    geom_smooth(method = "lm", color = "black", se = FALSE, linetype = "dashed") +  # Linear regression trendline
+    labs(title = paste("Scatterplot of", var, "vs Pitch Speed"),
+         x = var,
+         y = "Pitch Speed (mph)") +
+    theme_minimal()
+  
+  print(p)  # Display the plot
+}
+
+```
+
+```{r}
+# Define predictor variables (excluding the response variable)
+pitch_speed_predictors <- setdiff(high_corr_vars_pitch_speed, "pitch_speed_mph")
+
+# Compute MIC for Predictor-Predictor Relationships
+mic_pitch_speed <- mine(na.omit(pitch_data_imp %>% select(all_of(pitch_speed_predictors))))$MIC
+
+# Compute Pearson Correlation for Predictor-Predictor Relationships
+pearson_pitch_speed <- rcorr(as.matrix(na.omit(pitch_data_imp %>% select(all_of(pitch_speed_predictors)))))$r
+
+# Convert MIC & Pearson Matrices to DataFrames
+convert_to_df <- function(mic_matrix, pearson_matrix) {
+  mic_df <- as.data.frame(as.table(mic_matrix)) %>% rename(Var1 = Var1, Var2 = Var2, MIC = Freq)
+  pearson_df <- as.data.frame(as.table(pearson_matrix)) %>% rename(Var1 = Var1, Var2 = Var2, Pearson = Freq)
+  left_join(mic_df, pearson_df, by = c("Var1", "Var2"))
+}
+
+pitch_speed_results <- convert_to_df(mic_pitch_speed, pearson_pitch_speed)
+
+# Function to compute MIC & Pearson correlation between predictors and the response variable
+compute_response_relationship <- function(predictors, response_var) {
+  results <- lapply(predictors, function(var) {
+    # Compute MIC only between the predictor and the response
+    mic_value <- mine(na.omit(pitch_data_imp %>% select(all_of(c(var, response_var)))))$MIC[1, 2]
+
+    # Compute Pearson correlation between predictor and response
+    pearson_value <- cor(pitch_data_imp[[var]], pitch_data_imp[[response_var]], use = "complete.obs")
+
+    # Return a formatted row
+    data.frame(Var1 = var, MIC = round(mic_value, 3), Pearson = round(pearson_value, 3))
+  })
+
+  # Combine results and filter for nonlinear relationships
+  df <- bind_rows(results) %>%
+    filter(MIC >= 0.2 & abs(Pearson) <= 0.4)  # Select nonlinear candidates
+
+  return(df)
+}
+
+# Compute Response-Predictor Relationships for Nonlinear Terms
+pitch_speed_nonlinear <- compute_response_relationship(pitch_speed_predictors, "pitch_speed_mph")
+
+# Filter Predictor-Predictor Relationships for Interaction & Multicollinearity
+pitch_speed_interactions <- pitch_speed_results %>%
+  filter(MIC >= 0.2 & MIC <= 0.5 | MIC <= 0.6) %>%
+  filter(Pearson >= 0.4 & Pearson <= 0.6) %>%
+  filter(Var1 != Var2)  # Selecting interaction term candidates
+
+pitch_speed_multicollinear <- pitch_speed_results %>%
+  filter(abs(Pearson) >= 0.7) %>%
+  filter(Var1 != Var2)  # Selecting multicollinear variable pairs
+
+# Function to Remove Self-Correlations & Duplicate Pairs
+remove_duplicate_pairs <- function(df) {
+  df %>%
+    mutate(
+      Var1 = as.character(Var1),
+      Var2 = as.character(Var2),
+      Var_low = ifelse(Var1 < Var2, Var1, Var2),
+      Var_high = ifelse(Var1 < Var2, Var2, Var1)
+    ) %>%
+    filter(Var_low != Var_high) %>%  # Remove self-correlations
+    distinct(Var_low, Var_high, .keep_all = TRUE) %>%  # Keep only unique pairs
+    select(-Var1, -Var2) %>%  # Drop old columns
+    rename(Var1 = Var_low, Var2 = Var_high) %>%  # Rename back
+    select(Var1, Var2, MIC, Pearson)  # Reorder columns
+}
+
+# Apply duplicate removal
+pitch_speed_interactions <- remove_duplicate_pairs(pitch_speed_interactions)
+pitch_speed_multicollinear <- remove_duplicate_pairs(pitch_speed_multicollinear)
+
+# Function to Display Tables
+display_table <- function(df, title) {
+  if (nrow(df) > 0) {
+    df %>%
+      kable("html", caption = title) %>%
+      kable_styling(full_width = FALSE, position = "center", bootstrap_options = c("striped", "hover"))
+  } else {
+    cat(paste("⚠️ No significant", title, "found.\n"))
+  }
+}
+
+# Display Tables
+display_table(pitch_speed_interactions, "Pitch Speed Interaction Candidates")
+display_table(pitch_speed_nonlinear, "Pitch Speed Nonlinear Term Candidates")
+display_table(pitch_speed_multicollinear, "Pitch Speed Multicollinear Variables")
+
+```
+
+```{r}
+final_vars <- c(
+  "max_shoulder_internal_rotational_velo", "max_shoulder_external_rotation", "max_shoulder_horizontal_abduction",
+  "elbow_varus_moment", "elbow_transfer_fp_br",
+  "max_torso_rotational_velo", "max_rotation_hip_shoulder_separation", "pelvis_anterior_tilt_fp",
+  "max_cog_velo_x", "lead_knee_extension_from_fp_to_br", "lead_knee_transfer_fp_br",
+  "rear_hip_generation_pkh_fp", "rear_grf_z_max", "lead_grf_z_max"
+)
+
+
+# Run VIF test
+vif_data <- lm(pitch_speed_mph ~ ., data = pitch_data_imp %>% select(pitch_speed_mph, all_of(final_vars)))
+vif_results <- vif(vif_data)
+
+# Print VIF results
+print(vif_results)
+
+```
+
+```{r}
+# Scale numeric predictors only (excluding categorical variables)
+# Ensure categorical variables are correctly treated
+scaled_pitch_data <- pitch_data_imp %>%
+  mutate(across(where(is.numeric), ~ scale(.)[,1])) %>%
+  mutate(
+    p_throws = as.factor(p_throws), 
+    user = as.factor(user)  # User must be a factor for random effects
+  )
+
+# Load required libraries
+options(mc.cores = 2)  # Reduce parallel processing
+
+# 🔹 1️⃣ Force Model (GRF)
+force_model <- stan_gamm4(
+  pitch_speed_mph ~ s(rear_grf_z_max) + lead_grf_z_max + 
+                    p_throws + s(user, bs = "re"),  # Corrected random effect
+  family = gaussian(),
+  data = scaled_pitch_data,  
+  chains = 2, 
+  iter = 4000,  
+  warmup = 1500,  
+  adapt_delta = 0.95,  
+  control = list(max_treedepth = 12),  
+  cores = 2
+)
+```
+
+
+
+
+```{r}
+# 🔹 2️⃣ Upper Body Model
+upper_body_model <- stan_gamm4(
+  pitch_speed_mph ~ s(max_shoulder_internal_rotational_velo) + 
+                    max_shoulder_external_rotation + 
+                    max_shoulder_horizontal_abduction + 
+                    elbow_varus_moment + 
+                    elbow_transfer_fp_br + 
+                    p_throws + s(user, bs = "re"),  # Corrected
+  family = gaussian(),
+  data = scaled_pitch_data,  
+  chains = 2, 
+  iter = 4000,  
+  warmup = 1500,  
+  adapt_delta = 0.95,  
+  control = list(max_treedepth = 12),  
+  cores = 2
+)
+
+# 🔹 3️⃣ Lower Body & Core Model
+lower_body_model <- stan_gamm4(
+  pitch_speed_mph ~ s(max_torso_rotational_velo) + 
+                    max_rotation_hip_shoulder_separation + 
+                    pelvis_anterior_tilt_fp + 
+                    max_cog_velo_x + 
+                    lead_knee_extension_from_fp_to_br + 
+                    lead_knee_transfer_fp_br + 
+                    rear_hip_generation_pkh_fp + 
+                    p_throws + s(user, bs = "re"),  # Corrected
+  family = gaussian(),
+  data = scaled_pitch_data,  
+  chains = 2, 
+  iter = 4000,  
+  warmup = 1500,  
+  adapt_delta = 0.95,  
+  control = list(max_treedepth = 12),  
+  cores = 2
+)
+
+# 🔹 4️⃣ Full Model (With Key Interactions)
+full_model <- stan_gamm4(
+  pitch_speed_mph ~ s(max_shoulder_internal_rotational_velo) + 
+                    max_shoulder_external_rotation + 
+                    max_shoulder_horizontal_abduction + 
+                    elbow_varus_moment + 
+                    elbow_transfer_fp_br + 
+                    s(max_torso_rotational_velo) + 
+                    max_rotation_hip_shoulder_separation + 
+                    pelvis_anterior_tilt_fp + 
+                    s(max_cog_velo_x) + 
+                    lead_knee_extension_from_fp_to_br + 
+                    lead_knee_transfer_fp_br + 
+                    rear_hip_generation_pkh_fp + 
+                    s(rear_grf_z_max) + 
+                    lead_grf_z_max + 
+                    p_throws + s(user, bs = "re") +  # Corrected
+                    # 🔹 Key Interactions
+                    max_rotation_hip_shoulder_separation:lead_knee_extension_from_fp_to_br + 
+                    elbow_varus_moment:elbow_transfer_fp_br + 
+                    rear_grf_z_max:lead_grf_z_max,
+  family = gaussian(),
+  data = scaled_pitch_data,  
+  chains = 2,  
+  iter = 4000,  
+  warmup = 1500,  
+  adapt_delta = 0.95,  
+  control = list(max_treedepth = 12),  
+  cores = 2
+)
+
+```
+
+```{r}
+# Load necessary packages
+library(loo)  # For WAIC, LOO, and Pareto diagnostics
+library(posterior)  # For computing predictions
+library(Metrics)  # For RMSE & MAE
+
+# 🔹 Compute WAIC & LOO for each model
+waic_force <- waic(force_model)
+waic_upper_body <- waic(upper_body_model)
+waic_lower_body <- waic(lower_body_model)
+waic_full <- waic(full_model)
+
+loo_force <- loo(force_model)
+loo_upper_body <- loo(upper_body_model)
+loo_lower_body <- loo(lower_body_model)
+loo_full <- loo(full_model)
+
+# 🔹 Perform 5-Fold Cross-Validation
+kfold_force <- kfold(force_model, K = 5)
+kfold_upper_body <- kfold(upper_body_model, K = 5)
+kfold_lower_body <- kfold(lower_body_model, K = 5)
+kfold_full <- kfold(full_model, K = 5)
+
+# 🔹 Compute predictions for RMSE & MAE
+y_pred_force <- posterior_predict(force_model)
+y_pred_upper_body <- posterior_predict(upper_body_model)
+y_pred_lower_body <- posterior_predict(lower_body_model)
+y_pred_full <- posterior_predict(full_model)
+
+# 🔹 Compute RMSE
+rmse_force <- rmse(scaled_pitch_data$pitch_speed_mph, colMeans(y_pred_force))
+rmse_upper_body <- rmse(scaled_pitch_data$pitch_speed_mph, colMeans(y_pred_upper_body))
+rmse_lower_body <- rmse(scaled_pitch_data$pitch_speed_mph, colMeans(y_pred_lower_body))
+rmse_full <- rmse(scaled_pitch_data$pitch_speed_mph, colMeans(y_pred_full))
+
+# 🔹 Compute MAE
+mae_force <- mae(scaled_pitch_data$pitch_speed_mph, colMeans(y_pred_force))
+mae_upper_body <- mae(scaled_pitch_data$pitch_speed_mph, colMeans(y_pred_upper_body))
+mae_lower_body <- mae(scaled_pitch_data$pitch_speed_mph, colMeans(y_pred_lower_body))
+mae_full <- mae(scaled_pitch_data$pitch_speed_mph, colMeans(y_pred_full))
+
+# 🔹 Store results in a comparison table
+model_comparison <- data.frame(
+  Model = c("Force Model", "Upper Body Model", "Lower Body Model", "Full Model"),
+  WAIC = c(waic_force$estimates["waic", "Estimate"], waic_upper_body$estimates["waic", "Estimate"],
+           waic_lower_body$estimates["waic", "Estimate"], waic_full$estimates["waic", "Estimate"]),
+  LOO = c(loo_force$estimates["looic", "Estimate"], loo_upper_body$estimates["looic", "Estimate"],
+          loo_lower_body$estimates["looic", "Estimate"], loo_full$estimates["looic", "Estimate"]),
+  RMSE = c(rmse_force, rmse_upper_body, rmse_lower_body, rmse_full),
+  MAE = c(mae_force, mae_upper_body, mae_lower_body, mae_full)
+)
+
+# 🔹 Print model comparison results
+print(model_comparison)
+```
+
+```{r}
+# 🔹 Get fixed effect parameter names for each model
+params_force <- names(fixef(force_model))  
+params_upper_body <- names(fixef(upper_body_model))  
+params_lower_body <- names(fixef(lower_body_model))
+params_full <- names(fixef(full_model))
+
+# 🔹 Define parameters to check for each model (filtering for existing ones)
+params_to_check_force <- intersect(c("(Intercept)", "rear_grf_z_max", "lead_grf_z_max", "p_throws"), params_force)
+params_to_check_upper_body <- intersect(c("(Intercept)", "max_shoulder_internal_rotational_velo", "max_shoulder_external_rotation", 
+                                          "max_shoulder_horizontal_abduction", "elbow_varus_moment", 
+                                          "elbow_transfer_fp_br", "p_throws"), params_upper_body)
+params_to_check_lower_body <- intersect(c("(Intercept)", "max_torso_rotational_velo", "max_rotation_hip_shoulder_separation", 
+                                          "pelvis_anterior_tilt_fp", "max_cog_velo_x", "lead_knee_extension_from_fp_to_br", 
+                                          "lead_knee_transfer_fp_br", "rear_hip_generation_pkh_fp", "p_throws"), params_lower_body)
+params_to_check_full <- intersect(c("(Intercept)", "max_shoulder_internal_rotational_velo", "max_shoulder_external_rotation", 
+                                    "max_shoulder_horizontal_abduction", "elbow_varus_moment", "elbow_transfer_fp_br", 
+                                    "max_torso_rotational_velo", "max_rotation_hip_shoulder_separation", "pelvis_anterior_tilt_fp", 
+                                    "max_cog_velo_x", "lead_knee_extension_from_fp_to_br", "lead_knee_transfer_fp_br", 
+                                    "rear_hip_generation_pkh_fp", "rear_grf_z_max", "lead_grf_z_max", "p_throws"), params_full)
+
+# 🔹 Generate trace plots for Force Model
+mcmc_trace(as.array(as.matrix(force_model)), pars = params_to_check_force) + 
+  ggtitle("Trace Plot - Force Model")
+
+# 🔹 Generate trace plots for Upper Body Model
+mcmc_trace(as.array(as.matrix(upper_body_model)), pars = params_to_check_upper_body) + 
+  ggtitle("Trace Plot - Upper Body Model")
+
+# 🔹 Generate trace plots for Lower Body & Core Model
+mcmc_trace(as.array(as.matrix(lower_body_model)), pars = params_to_check_lower_body) + 
+  ggtitle("Trace Plot - Lower Body & Core Model")
+
+# 🔹 Generate trace plots for Full Model
+mcmc_trace(as.array(as.matrix(full_model)), pars = params_to_check_full) + 
+  ggtitle("Trace Plot - Full Model")
+
+```
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(rstan)
+
+# 🔹 Extract Stan summary for each model
+summary_force <- rstan::summary(force_model$stanfit)$summary
+summary_upper_body <- rstan::summary(upper_body_model$stanfit)$summary
+summary_lower_body <- rstan::summary(lower_body_model$stanfit)$summary
+summary_full <- rstan::summary(full_model$stanfit)$summary
+
+# 🔹 Extract only R-hat values
+rhat_values_force <- summary_force[, "Rhat"]
+rhat_values_upper_body <- summary_upper_body[, "Rhat"]
+rhat_values_lower_body <- summary_lower_body[, "Rhat"]
+rhat_values_full <- summary_full[, "Rhat"]
+
+# 🔹 Convert to DataFrame and sort by highest R-hat
+rhat_df_force <- data.frame(coefficient = names(rhat_values_force), rhat = rhat_values_force) %>%
+  arrange(desc(rhat))
+
+rhat_df_upper_body <- data.frame(coefficient = names(rhat_values_upper_body), rhat = rhat_values_upper_body) %>%
+  arrange(desc(rhat))
+
+rhat_df_lower_body <- data.frame(coefficient = names(rhat_values_lower_body), rhat = rhat_values_lower_body) %>%
+  arrange(desc(rhat))
+
+rhat_df_full <- data.frame(coefficient = names(rhat_values_full), rhat = rhat_values_full) %>%
+  arrange(desc(rhat))
+
+# 🔹 **Remove `s(user)` parameters**
+rhat_df_force_filtered <- rhat_df_force %>% filter(!grepl("^s\\(user", coefficient))
+rhat_df_upper_body_filtered <- rhat_df_upper_body %>% filter(!grepl("^s\\(user", coefficient))
+rhat_df_lower_body_filtered <- rhat_df_lower_body %>% filter(!grepl("^s\\(user", coefficient))
+rhat_df_full_filtered <- rhat_df_full %>% filter(!grepl("^s\\(user", coefficient))
+
+# 🔹 Print filtered `R-hat` tables
+print("🔍 Sorted R-hat Values (Filtered) - Force Model")
+print(rhat_df_force_filtered)
+
+print("🔍 Sorted R-hat Values (Filtered) - Upper Body Model")
+print(rhat_df_upper_body_filtered)
+
+print("🔍 Sorted R-hat Values (Filtered) - Lower Body & Core Model")
+print(rhat_df_lower_body_filtered)
+
+print("🔍 Sorted R-hat Values (Filtered) - Full Model")
+print(rhat_df_full_filtered)
+
+```
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+
+# 🔹 Generate R-hat plots for Force Model
+ggplot(rhat_df_force_filtered, aes(x = reorder(coefficient, rhat), y = rhat)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +
+  labs(title = "Filtered R-hat Values - Force Model", x = "Parameter", y = "R-hat") +
+  theme_minimal()
+
+# 🔹 Generate R-hat plots for Upper Body Model
+ggplot(rhat_df_upper_body_filtered, aes(x = reorder(coefficient, rhat), y = rhat)) +
+  geom_bar(stat = "identity", fill = "red") +
+  coord_flip() +
+  labs(title = "Filtered R-hat Values - Upper Body Model", x = "Parameter", y = "R-hat") +
+  theme_minimal()
+
+# 🔹 Generate R-hat plots for Lower Body & Core Model
+ggplot(rhat_df_lower_body_filtered, aes(x = reorder(coefficient, rhat), y = rhat)) +
+  geom_bar(stat = "identity", fill = "green") +
+  coord_flip() +
+  labs(title = "Filtered R-hat Values - Lower Body & Core Model", x = "Parameter", y = "R-hat") +
+  theme_minimal()
+
+# 🔹 Generate R-hat plots for Full Model
+ggplot(rhat_df_full_filtered, aes(x = reorder(coefficient, rhat), y = rhat)) +
+  geom_bar(stat = "identity", fill = "purple") +
+  coord_flip() +
+  labs(title = "Filtered R-hat Values - Full Model", x = "Parameter", y = "R-hat") +
+  theme_minimal()
+
+```
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+
+# 🔹 Compute residuals for each model
+residuals_force <- residuals(force_model)
+residuals_upper_body <- residuals(upper_body_model)
+residuals_lower_body <- residuals(lower_body_model)
+residuals_full <- residuals(full_model)
+
+# 🔹 Generate residual histograms for Force Model
+ggplot(data.frame(residuals_force), aes(x = residuals_force)) +
+  geom_histogram(bins = 30, fill = "blue", alpha = 0.6) +
+  ggtitle("Residuals - Force Model") +
+  theme_minimal()
+
+# 🔹 Generate residual histograms for Upper Body Model
+ggplot(data.frame(residuals_upper_body), aes(x = residuals_upper_body)) +
+  geom_histogram(bins = 30, fill = "red", alpha = 0.6) +
+  ggtitle("Residuals - Upper Body Model") +
+  theme_minimal()
+
+# 🔹 Generate residual histograms for Lower Body & Core Model
+ggplot(data.frame(residuals_lower_body), aes(x = residuals_lower_body)) +
+  geom_histogram(bins = 30, fill = "green", alpha = 0.6) +
+  ggtitle("Residuals - Lower Body & Core Model") +
+  theme_minimal()
+
+# 🔹 Generate residual histograms for Full Model
+ggplot(data.frame(residuals_full), aes(x = residuals_full)) +
+  geom_histogram(bins = 30, fill = "purple", alpha = 0.6) +
+  ggtitle("Residuals - Full Model") +
+  theme_minimal()
+
+```
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(rstanarm)
+
+# 🔹 Generate posterior predictive samples
+y_rep_force <- posterior_predict(force_model)
+y_rep_upper_body <- posterior_predict(upper_body_model)
+y_rep_lower_body <- posterior_predict(lower_body_model)
+y_rep_full <- posterior_predict(full_model)
+
+# 🔹 Convert to dataframes
+df_force <- data.frame(y_rep = apply(y_rep_force, 2, mean))
+df_upper_body <- data.frame(y_rep = apply(y_rep_upper_body, 2, mean))
+df_lower_body <- data.frame(y_rep = apply(y_rep_lower_body, 2, mean))
+df_full <- data.frame(y_rep = apply(y_rep_full, 2, mean))
+
+# 🔹 Posterior predictive histograms
+ggplot(df_force, aes(x = y_rep)) +
+  geom_histogram(bins = 30, fill = "blue", alpha = 0.6) +
+  ggtitle("Posterior Predictive - Force Model") +
+  theme_minimal()
+
+ggplot(df_upper_body, aes(x = y_rep)) +
+  geom_histogram(bins = 30, fill = "red", alpha = 0.6) +
+  ggtitle("Posterior Predictive - Upper Body Model") +
+  theme_minimal()
+
+ggplot(df_lower_body, aes(x = y_rep)) +
+  geom_histogram(bins = 30, fill = "green", alpha = 0.6) +
+  ggtitle("Posterior Predictive - Lower Body & Core Model") +
+  theme_minimal()
+
+ggplot(df_full, aes(x = y_rep)) +
+  geom_histogram(bins = 30, fill = "purple", alpha = 0.6) +
+  ggtitle("Posterior Predictive - Full Model") +
+  theme_minimal()
+
+# 🔹 Posterior predictive scatterplots (Predicted vs. Observed)
+ggplot(data.frame(y_pred = apply(y_rep_force, 2, mean), y_obs = scaled_pitch_data$pitch_speed_mph), 
+       aes(x = y_obs, y = y_pred)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  ggtitle("Posterior Predictive Scatter - Force Model") +
+  theme_minimal()
+
+ggplot(data.frame(y_pred = apply(y_rep_upper_body, 2, mean), y_obs = scaled_pitch_data$pitch_speed_mph), 
+       aes(x = y_obs, y = y_pred)) +
+  geom_point(alpha = 0.5, color = "red") +
+  ggtitle("Posterior Predictive Scatter - Upper Body Model") +
+  theme_minimal()
+
+ggplot(data.frame(y_pred = apply(y_rep_lower_body, 2, mean), y_obs = scaled_pitch_data$pitch_speed_mph), 
+       aes(x = y_obs, y = y_pred)) +
+  geom_point(alpha = 0.5, color = "green") +
+  ggtitle("Posterior Predictive Scatter - Lower Body & Core Model") +
+  theme_minimal()
+
+ggplot(data.frame(y_pred = apply(y_rep_full, 2, mean), y_obs = scaled_pitch_data$pitch_speed_mph), 
+       aes(x = y_obs, y = y_pred)) +
+  geom_point(alpha = 0.5, color = "purple") +
+  ggtitle("Posterior Predictive Scatter - Full Model") +
+  theme_minimal()
+```
+
+```{r}
+# Compute model predictions
+pred_force <- apply(posterior_predict(force_model), 2, mean)
+pred_upper_body <- apply(posterior_predict(upper_body_model), 2, mean)
+pred_lower_body <- apply(posterior_predict(lower_body_model), 2, mean)
+pred_full <- apply(posterior_predict(full_model), 2, mean)
+
+# Create dataset with unscaled values
+final_dataset <- pitch_data_imp %>%  # Use unscaled dataset
+  select(pitch_speed_mph,  # Keep observed values (unscaled)
+         max_shoulder_internal_rotational_velo, max_shoulder_external_rotation,
+         max_shoulder_horizontal_abduction, elbow_varus_moment, elbow_transfer_fp_br,
+         max_torso_rotational_velo, max_rotation_hip_shoulder_separation,
+         pelvis_anterior_tilt_fp, max_cog_velo_x, lead_knee_extension_from_fp_to_br,
+         lead_knee_transfer_fp_br, rear_hip_generation_pkh_fp,
+         rear_grf_z_max, lead_grf_z_max, p_throws, user) %>%  # Keep only model-relevant features
+  mutate(
+    pred_force_model = pred_force * sd(pitch_speed_mph) + mean(pitch_speed_mph),  # Rescale predictions
+    pred_upper_body_model = pred_upper_body * sd(pitch_speed_mph) + mean(pitch_speed_mph),
+    pred_lower_body_model = pred_lower_body * sd(pitch_speed_mph) + mean(pitch_speed_mph),
+    pred_full_model = pred_full * sd(pitch_speed_mph) + mean(pitch_speed_mph)
+  )
+
+# Save to CSV
+write.csv(final_dataset, "pitch_model_predictions_unscaled.csv", row.names = FALSE)
+
+# Print confirmation
+print("✅ Final data saved as 'pitch_model_predictions_unscaled.csv' with model predictions!")
+
+```
+
+```{r}
+set.seed(123)  # Reproducibility
+
+# 🔹 **Step 1: Train-Test Split (Must Happen First!)**
+train_indices <- sample(seq_len(nrow(pitch_data_imp)), size = 0.7 * nrow(pitch_data_imp))
+train_data <- pitch_data_imp[train_indices, ]
+test_data <- pitch_data_imp[-train_indices, ]
+
+# 🔹 **Step 2: Ensure Categorical Variables Have Matching Levels**
+test_data$user <- factor(test_data$user, levels = levels(train_data$user))
+test_data$p_throws <- factor(test_data$p_throws, levels = levels(train_data$p_throws))
+
+# 🔹 **Step 3: Generate Posterior Expected Values for Each Model**
+preds_force <- posterior_epred(force_model, newdata = test_data)
+preds_upper_body <- posterior_epred(upper_body_model, newdata = test_data)
+preds_lower_body <- posterior_epred(lower_body_model, newdata = test_data)
+preds_full <- posterior_epred(full_model, newdata = test_data)
+
+# 🔹 **Step 4: Take the Mean of Posterior Draws for Each Prediction**
+test_data$pred_force_model <- apply(preds_force, 2, mean)
+test_data$pred_upper_body_model <- apply(preds_upper_body, 2, mean)
+test_data$pred_lower_body_model <- apply(preds_lower_body, 2, mean)
+test_data$pred_full_model <- apply(preds_full, 2, mean)
+
+# 🔹 **Step 5: Reverse Scaling if Pitch Speed Was Scaled**
+pitch_mean <- mean(train_data$pitch_speed_mph, na.rm = TRUE)
+pitch_sd <- sd(train_data$pitch_speed_mph, na.rm = TRUE)
+
+test_data$pred_force_model <- (test_data$pred_force_model * pitch_sd) + pitch_mean
+test_data$pred_upper_body_model <- (test_data$pred_upper_body_model * pitch_sd) + pitch_mean
+test_data$pred_lower_body_model <- (test_data$pred_lower_body_model * pitch_sd) + pitch_mean
+test_data$pred_full_model <- (test_data$pred_full_model * pitch_sd) + pitch_mean
+
+# 🔹 **Step 6: Debugging - Check Prediction Ranges**
+print(summary(test_data$pred_force_model))
+print(summary(test_data$pred_upper_body_model))
+print(summary(test_data$pred_lower_body_model))
+print(summary(test_data$pred_full_model))
+
+# 🔹 **Step 7: Compute RMSE for Each Model**
+rmse_force <- rmse(test_data$pitch_speed_mph, test_data$pred_force_model)
+rmse_upper_body <- rmse(test_data$pitch_speed_mph, test_data$pred_upper_body_model)
+rmse_lower_body <- rmse(test_data$pitch_speed_mph, test_data$pred_lower_body_model)
+rmse_full <- rmse(test_data$pitch_speed_mph, test_data$pred_full_model)
+
+# 🔹 **Step 8: Select the Best-Performing Model Per Row (Lowest Absolute Error)**
+test_data$best_pred_model <- apply(
+  cbind(
+    abs(test_data$pitch_speed_mph - test_data$pred_force_model),
+    abs(test_data$pitch_speed_mph - test_data$pred_upper_body_model),
+    abs(test_data$pitch_speed_mph - test_data$pred_lower_body_model),
+    abs(test_data$pitch_speed_mph - test_data$pred_full_model)
+  ),
+  1,  # Apply function row-wise
+  function(errors) c("force_model", "upper_body_model", "lower_body_model", "full_model")[which.min(errors)]
+)
+
+# 🔹 **Step 9: Count the Number of Times Each Model Was Selected as Best**
+best_model_counts <- table(test_data$best_pred_model)
+
+# 🔹 **Step 10: Print RMSE Scores & Best Model Counts**
+print(paste("RMSE - Force Model:", rmse_force))
+print(paste("RMSE - Upper Body Model:", rmse_upper_body))
+print(paste("RMSE - Lower Body Model:", rmse_lower_body))
+print(paste("RMSE - Full Model:", rmse_full))
+
+print("🔍 Best Model Selection Counts:")
+print(best_model_counts)
+
+```
+```{r}
+# Count missing values in each column
+colSums(is.na(test_data))
+
+```
+
+
+stan_glm horshoe; prior = hs; extract summary and then find which estimates are less than .05 (or a non-zero effect threshold); wriite a function that includes stanglm call, function plugs in ideal features
+
+for r script:
+-constants file (different prefixes of paths that models are aimed at within repo, naming conventions, date ranges, train/test split sizes, random seeds etc.)
+-helper files (data preprocessing; return df / tibble to be passed in later)
+-train file (where you're training the model that sources constants and helpers)
+- by the time sourcing is done, you'll have read in your training data
+- model calibration within script; isotonic, scam, bayesian binning (extra) in calibr
+-predict script
+- good practice to have a lint function to go through code (lintr package); refactoring practices
+```{r}
+# 🔹 2️⃣ Upper Body Model
+
+options(mc.cores = parallel::detectCores())
+
+upper_body_model_hs <- stan_gamm4(
+  pitch_speed_mph ~ s(max_shoulder_internal_rotational_velo) + 
+                    max_shoulder_external_rotation + 
+                    max_shoulder_horizontal_abduction + 
+                    elbow_varus_moment + 
+                    elbow_transfer_fp_br + 
+                    p_throws + s(user, bs = "re"),  # Corrected
+  family = gaussian(),
+  prior = hs(df = 1, global_scale = .1), # determines harshness of selection
+  data = scaled_pitch_data,  
+  chains = 4, 
+  iter = 2000,  
+  warmup = 1000,  # Stable estimates by the time you get to iterating within parameter space
+  adapt_delta = 0.95,  
+  control = list(max_treedepth = 12),  
+  cores = 4,
+  refresh = 1
+)
+```
+```{r}
+#print(summary(upper_body_model_hs))
+coeff_summary = data.frame(nms = names(upper_body_model_hs$coefficients),
+                           vals = as.numeric(upper_body_model_hs$coefficients))
+
+coeff_summary %>% 
+  mutate(aval = abs(vals)) %>%
+  filter(aval < .05)
+```
+
+```{r}
+vals <- as.numeric(upper_body_model_hs$coefficients)
+```
+
+```{r}
+vals
+```
+- 6 potential combinatinos fed into horeshoe prior (with varying scales, DoF and distributions); predictors that remain (meaningful) models. Apply all 6 models to a test set, then evaluate using MAE/RMSE for best one
+- Organize repo a bit more professionally (see above)
+- read.me from M for file structure, source in constants, etc.
+1. run from git
+2. visualize

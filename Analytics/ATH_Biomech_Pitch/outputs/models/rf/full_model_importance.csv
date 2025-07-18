@@ -1,0 +1,13 @@
+Feature,Importance
+elbow_transfer_fp_br,0.5845626211772277
+max_torso_rotational_velo,0.0775287560194318
+max_shoulder_internal_rotational_velo,0.07731703584646439
+max_shoulder_horizontal_abduction,0.06295304773337956
+lead_grf_z_max,0.03053063742772479
+max_shoulder_external_rotation,0.027509593132902535
+max_rotation_hip_shoulder_separation,0.027299751946402367
+lead_knee_extension_from_fp_to_br,0.026913916412914504
+rear_hip_generation_pkh_fp,0.024913324204189343
+max_cog_velo_x,0.02405220797345439
+pelvis_anterior_tilt_fp,0.02134336842923565
+lead_knee_transfer_fp_br,0.015075739696672925

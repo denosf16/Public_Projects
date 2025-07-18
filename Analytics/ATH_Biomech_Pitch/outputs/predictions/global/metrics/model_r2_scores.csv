@@ -1,0 +1,17 @@
+Model,Technique,Test_R2
+force_model,rf,-0.4312376767242483
+upper_body_model,rf,0.6530049186133129
+lower_body_model,rf,0.6766294474378952
+full_model,rf,0.7761541220994684
+force_model,elasticnet,-0.009203784700885453
+upper_body_model,elasticnet,0.5488581234227887
+lower_body_model,elasticnet,0.2817841735836759
+full_model,elasticnet,0.6018695824626742
+force_model,gam,-0.05393344973865921
+upper_body_model,gam,0.7171781203334444
+lower_body_model,gam,0.4510102233512776
+full_model,gam,0.7530293479763159
+force_model,mlp,-0.0779499516518043
+upper_body_model,mlp,0.6334087670478006
+lower_body_model,mlp,0.42848215887469754
+full_model,mlp,-0.6019158088346179

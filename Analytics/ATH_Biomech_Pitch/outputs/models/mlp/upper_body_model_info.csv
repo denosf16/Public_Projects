@@ -1,0 +1,5 @@
+Feature,Weight_Info
+max_shoulder_internal_rotational_velo,[hidden]
+max_shoulder_external_rotation,[hidden]
+max_shoulder_horizontal_abduction,[hidden]
+elbow_transfer_fp_br,[hidden]

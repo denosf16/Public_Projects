@@ -1,0 +1,13 @@
+Feature,EDOF,Lambda
+lead_grf_z_max,106.7045386462953,[0.6]
+max_shoulder_internal_rotational_velo,106.7045386462953,[0.6]
+max_shoulder_external_rotation,106.7045386462953,[0.6]
+max_shoulder_horizontal_abduction,106.7045386462953,[0.6]
+elbow_transfer_fp_br,106.7045386462953,[0.6]
+max_torso_rotational_velo,106.7045386462953,[0.6]
+max_rotation_hip_shoulder_separation,106.7045386462953,[0.6]
+pelvis_anterior_tilt_fp,106.7045386462953,[0.6]
+max_cog_velo_x,106.7045386462953,[0.6]
+lead_knee_extension_from_fp_to_br,106.7045386462953,[0.6]
+lead_knee_transfer_fp_br,106.7045386462953,[0.6]
+rear_hip_generation_pkh_fp,106.7045386462953,[0.6]

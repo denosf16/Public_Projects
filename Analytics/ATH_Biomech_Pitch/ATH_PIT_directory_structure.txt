@@ -1,0 +1,1781 @@
+Folder PATH listing for volume OS
+Volume serial number is 303F-BF3A
+C:.
+¦   ATH_PIT_directory_structure.txt
+¦   structure.py
+¦   
++---app
+¦       Data_Cleaning.py
+¦       Evaluate.py
+¦       Feature_Selection.py
+¦       Home.py
+¦       Model_Training.py
+¦       Predict.py
+¦       
++---data
+¦       .gitkeep
+¦       pitch_data_cleaned.csv
+¦       pitch_meta.csv
+¦       pitch_poi.csv
+¦       test.csv
+¦       train.csv
+¦       val.csv
+¦       
++---outputs
+¦   ¦   .gitkeep
+¦   ¦   
+¦   +---eda_data
+¦   ¦   ¦   feature_scores.csv
+¦   ¦   ¦   model_metrics.csv
+¦   ¦   ¦   normality_summary.csv
+¦   ¦   ¦   outlier_counts.csv
+¦   ¦   ¦   selected_features.csv
+¦   ¦   ¦   vif_results.csv
+¦   ¦   ¦   
+¦   ¦   +---plots
+¦   ¦       ¦   correlation_heatmap.png
+¦   ¦       ¦   
+¦   ¦       +---histograms
+¦   ¦       ¦       hist_arm_slot.png
+¦   ¦       ¦       hist_cog_velo_pkh.png
+¦   ¦       ¦       hist_elbow_absorption_fp_br.png
+¦   ¦       ¦       hist_elbow_flexion_fp.png
+¦   ¦       ¦       hist_elbow_pronation_fp.png
+¦   ¦       ¦       hist_elbow_transfer_fp_br.png
+¦   ¦       ¦       hist_glove_shoulder_abduction_fp.png
+¦   ¦       ¦       hist_glove_shoulder_external_rotation_fp.png
+¦   ¦       ¦       hist_lead_grf_x_max.png
+¦   ¦       ¦       hist_lead_grf_z_max.png
+¦   ¦       ¦       hist_lead_hip_absorption_fp_br.png
+¦   ¦       ¦       hist_lead_hip_transfer_fp_br.png
+¦   ¦       ¦       hist_lead_knee_absorption_fp_br.png
+¦   ¦       ¦       hist_lead_knee_extension_angular_velo_max.png
+¦   ¦       ¦       hist_lead_knee_extension_from_fp_to_br.png
+¦   ¦       ¦       hist_lead_knee_generation_fp_br.png
+¦   ¦       ¦       hist_lead_knee_transfer_fp_br.png
+¦   ¦       ¦       hist_max_cog_velo_x.png
+¦   ¦       ¦       hist_max_elbow_extension_velo.png
+¦   ¦       ¦       hist_max_elbow_flexion.png
+¦   ¦       ¦       hist_max_rotation_hip_shoulder_separation.png
+¦   ¦       ¦       hist_max_shoulder_external_rotation.png
+¦   ¦       ¦       hist_max_shoulder_horizontal_abduction.png
+¦   ¦       ¦       hist_max_shoulder_internal_rotational_velo.png
+¦   ¦       ¦       hist_max_torso_rotational_velo.png
+¦   ¦       ¦       hist_pelvis_anterior_tilt_fp.png
+¦   ¦       ¦       hist_pelvis_lumbar_transfer_fp_br.png
+¦   ¦       ¦       hist_pelvis_rotation_fp.png
+¦   ¦       ¦       hist_rear_grf_mag_max.png
+¦   ¦       ¦       hist_rear_grf_x_max.png
+¦   ¦       ¦       hist_rear_hip_generation_pkh_fp.png
+¦   ¦       ¦       hist_rear_knee_transfer_pkh_fp.png
+¦   ¦       ¦       hist_shoulder_generation_fp_br.png
+¦   ¦       ¦       hist_shoulder_horizontal_abduction_fp.png
+¦   ¦       ¦       hist_shoulder_internal_rotation_moment.png
+¦   ¦       ¦       hist_stride_angle.png
+¦   ¦       ¦       hist_stride_length.png
+¦   ¦       ¦       hist_torso_anterior_tilt_mer.png
+¦   ¦       ¦       hist_torso_lateral_tilt_br.png
+¦   ¦       ¦       hist_torso_lateral_tilt_fp.png
+¦   ¦       ¦       
+¦   ¦       +---scatterplots
+¦   ¦               scatter_arm_slot.png
+¦   ¦               scatter_cog_velo_pkh.png
+¦   ¦               scatter_elbow_absorption_fp_br.png
+¦   ¦               scatter_elbow_flexion_fp.png
+¦   ¦               scatter_elbow_pronation_fp.png
+¦   ¦               scatter_elbow_transfer_fp_br.png
+¦   ¦               scatter_glove_shoulder_abduction_fp.png
+¦   ¦               scatter_glove_shoulder_external_rotation_fp.png
+¦   ¦               scatter_lead_grf_x_max.png
+¦   ¦               scatter_lead_grf_z_max.png
+¦   ¦               scatter_lead_hip_absorption_fp_br.png
+¦   ¦               scatter_lead_hip_transfer_fp_br.png
+¦   ¦               scatter_lead_knee_absorption_fp_br.png
+¦   ¦               scatter_lead_knee_extension_angular_velo_max.png
+¦   ¦               scatter_lead_knee_extension_from_fp_to_br.png
+¦   ¦               scatter_lead_knee_generation_fp_br.png
+¦   ¦               scatter_lead_knee_transfer_fp_br.png
+¦   ¦               scatter_max_cog_velo_x.png
+¦   ¦               scatter_max_elbow_extension_velo.png
+¦   ¦               scatter_max_elbow_flexion.png
+¦   ¦               scatter_max_rotation_hip_shoulder_separation.png
+¦   ¦               scatter_max_shoulder_external_rotation.png
+¦   ¦               scatter_max_shoulder_horizontal_abduction.png
+¦   ¦               scatter_max_shoulder_internal_rotational_velo.png
+¦   ¦               scatter_max_torso_rotational_velo.png
+¦   ¦               scatter_pelvis_anterior_tilt_fp.png
+¦   ¦               scatter_pelvis_lumbar_transfer_fp_br.png
+¦   ¦               scatter_pelvis_rotation_fp.png
+¦   ¦               scatter_rear_grf_mag_max.png
+¦   ¦               scatter_rear_grf_x_max.png
+¦   ¦               scatter_rear_hip_generation_pkh_fp.png
+¦   ¦               scatter_rear_knee_transfer_pkh_fp.png
+¦   ¦               scatter_shoulder_generation_fp_br.png
+¦   ¦               scatter_shoulder_horizontal_abduction_fp.png
+¦   ¦               scatter_shoulder_internal_rotation_moment.png
+¦   ¦               scatter_stride_angle.png
+¦   ¦               scatter_stride_length.png
+¦   ¦               scatter_torso_anterior_tilt_mer.png
+¦   ¦               scatter_torso_lateral_tilt_br.png
+¦   ¦               scatter_torso_lateral_tilt_fp.png
+¦   ¦               
+¦   +---models
+¦   ¦   ¦   model_metrics.csv
+¦   ¦   ¦   
+¦   ¦   +---elasticnet
+¦   ¦   ¦       force_model.joblib
+¦   ¦   ¦       force_model_coefficients.csv
+¦   ¦   ¦       force_model_importance.csv
+¦   ¦   ¦       full_model.joblib
+¦   ¦   ¦       full_model_coefficients.csv
+¦   ¦   ¦       full_model_importance.csv
+¦   ¦   ¦       lower_body_model.joblib
+¦   ¦   ¦       lower_body_model_coefficients.csv
+¦   ¦   ¦       lower_body_model_importance.csv
+¦   ¦   ¦       upper_body_model.joblib
+¦   ¦   ¦       upper_body_model_coefficients.csv
+¦   ¦   ¦       upper_body_model_importance.csv
+¦   ¦   ¦       
+¦   ¦   +---gam
+¦   ¦   ¦       force_model.joblib
+¦   ¦   ¦       force_model_importance.csv
+¦   ¦   ¦       force_model_summary.csv
+¦   ¦   ¦       full_model.joblib
+¦   ¦   ¦       full_model_importance.csv
+¦   ¦   ¦       full_model_summary.csv
+¦   ¦   ¦       lower_body_model.joblib
+¦   ¦   ¦       lower_body_model_importance.csv
+¦   ¦   ¦       lower_body_model_summary.csv
+¦   ¦   ¦       upper_body_model.joblib
+¦   ¦   ¦       upper_body_model_importance.csv
+¦   ¦   ¦       upper_body_model_summary.csv
+¦   ¦   ¦       
+¦   ¦   +---mlp
+¦   ¦   ¦       force_model.joblib
+¦   ¦   ¦       force_model_importance.csv
+¦   ¦   ¦       force_model_info.csv
+¦   ¦   ¦       full_model.joblib
+¦   ¦   ¦       full_model_importance.csv
+¦   ¦   ¦       full_model_info.csv
+¦   ¦   ¦       lower_body_model.joblib
+¦   ¦   ¦       lower_body_model_importance.csv
+¦   ¦   ¦       lower_body_model_info.csv
+¦   ¦   ¦       upper_body_model.joblib
+¦   ¦   ¦       upper_body_model_importance.csv
+¦   ¦   ¦       upper_body_model_info.csv
+¦   ¦   ¦       
+¦   ¦   +---rf
+¦   ¦           force_model.joblib
+¦   ¦           force_model_importance.csv
+¦   ¦           full_model.joblib
+¦   ¦           full_model_importance.csv
+¦   ¦           lower_body_model.joblib
+¦   ¦           lower_body_model_importance.csv
+¦   ¦           upper_body_model.joblib
+¦   ¦           upper_body_model_importance.csv
+¦   ¦           
+¦   +---plots
+¦   ¦   ¦   .gitkeep
+¦   ¦   ¦   
+¦   ¦   +---diagnostics
+¦   ¦   ¦   +---force_model
+¦   ¦   ¦   ¦   +---elasticnet
+¦   ¦   ¦   ¦   ¦       predictions.csv
+¦   ¦   ¦   ¦   ¦       pred_vs_actual.png
+¦   ¦   ¦   ¦   ¦       qq_plot.png
+¦   ¦   ¦   ¦   ¦       residuals.png
+¦   ¦   ¦   ¦   ¦       residuals_vs_fitted.png
+¦   ¦   ¦   ¦   ¦       
+¦   ¦   ¦   ¦   +---gam
+¦   ¦   ¦   ¦   ¦       predictions.csv
+¦   ¦   ¦   ¦   ¦       pred_vs_actual.png
+¦   ¦   ¦   ¦   ¦       qq_plot.png
+¦   ¦   ¦   ¦   ¦       residuals.png
+¦   ¦   ¦   ¦   ¦       residuals_vs_fitted.png
+¦   ¦   ¦   ¦   ¦       
+¦   ¦   ¦   ¦   +---mlp
+¦   ¦   ¦   ¦   ¦       predictions.csv
+¦   ¦   ¦   ¦   ¦       pred_vs_actual.png
+¦   ¦   ¦   ¦   ¦       qq_plot.png
+¦   ¦   ¦   ¦   ¦       residuals.png
+¦   ¦   ¦   ¦   ¦       residuals_vs_fitted.png
+¦   ¦   ¦   ¦   ¦       
+¦   ¦   ¦   ¦   +---rf
+¦   ¦   ¦   ¦           predictions.csv
+¦   ¦   ¦   ¦           pred_vs_actual.png
+¦   ¦   ¦   ¦           qq_plot.png
+¦   ¦   ¦   ¦           residuals.png
+¦   ¦   ¦   ¦           residuals_vs_fitted.png
+¦   ¦   ¦   ¦           
+¦   ¦   ¦   +---full_model
+¦   ¦   ¦   ¦   +---elasticnet
+¦   ¦   ¦   ¦   ¦       predictions.csv
+¦   ¦   ¦   ¦   ¦       pred_vs_actual.png
+¦   ¦   ¦   ¦   ¦       qq_plot.png
+¦   ¦   ¦   ¦   ¦       residuals.png
+¦   ¦   ¦   ¦   ¦       residuals_vs_fitted.png
+¦   ¦   ¦   ¦   ¦       
+¦   ¦   ¦   ¦   +---gam
+¦   ¦   ¦   ¦   ¦       predictions.csv
+¦   ¦   ¦   ¦   ¦       pred_vs_actual.png
+¦   ¦   ¦   ¦   ¦       qq_plot.png
+¦   ¦   ¦   ¦   ¦       residuals.png
+¦   ¦   ¦   ¦   ¦       residuals_vs_fitted.png
+¦   ¦   ¦   ¦   ¦       
+¦   ¦   ¦   ¦   +---mlp
+¦   ¦   ¦   ¦   ¦       predictions.csv
+¦   ¦   ¦   ¦   ¦       pred_vs_actual.png
+¦   ¦   ¦   ¦   ¦       qq_plot.png
+¦   ¦   ¦   ¦   ¦       residuals.png
+¦   ¦   ¦   ¦   ¦       residuals_vs_fitted.png
+¦   ¦   ¦   ¦   ¦       
+¦   ¦   ¦   ¦   +---rf
+¦   ¦   ¦   ¦           predictions.csv
+¦   ¦   ¦   ¦           pred_vs_actual.png
+¦   ¦   ¦   ¦           qq_plot.png
+¦   ¦   ¦   ¦           residuals.png
+¦   ¦   ¦   ¦           residuals_vs_fitted.png
+¦   ¦   ¦   ¦           
+¦   ¦   ¦   +---lower_body_model
+¦   ¦   ¦   ¦   +---elasticnet
+¦   ¦   ¦   ¦   ¦       predictions.csv
+¦   ¦   ¦   ¦   ¦       pred_vs_actual.png
+¦   ¦   ¦   ¦   ¦       qq_plot.png
+¦   ¦   ¦   ¦   ¦       residuals.png
+¦   ¦   ¦   ¦   ¦       residuals_vs_fitted.png
+¦   ¦   ¦   ¦   ¦       
+¦   ¦   ¦   ¦   +---gam
+¦   ¦   ¦   ¦   ¦       predictions.csv
+¦   ¦   ¦   ¦   ¦       pred_vs_actual.png
+¦   ¦   ¦   ¦   ¦       qq_plot.png
+¦   ¦   ¦   ¦   ¦       residuals.png
+¦   ¦   ¦   ¦   ¦       residuals_vs_fitted.png
+¦   ¦   ¦   ¦   ¦       
+¦   ¦   ¦   ¦   +---mlp
+¦   ¦   ¦   ¦   ¦       predictions.csv
+¦   ¦   ¦   ¦   ¦       pred_vs_actual.png
+¦   ¦   ¦   ¦   ¦       qq_plot.png
+¦   ¦   ¦   ¦   ¦       residuals.png
+¦   ¦   ¦   ¦   ¦       residuals_vs_fitted.png
+¦   ¦   ¦   ¦   ¦       
+¦   ¦   ¦   ¦   +---rf
+¦   ¦   ¦   ¦           predictions.csv
+¦   ¦   ¦   ¦           pred_vs_actual.png
+¦   ¦   ¦   ¦           qq_plot.png
+¦   ¦   ¦   ¦           residuals.png
+¦   ¦   ¦   ¦           residuals_vs_fitted.png
+¦   ¦   ¦   ¦           
+¦   ¦   ¦   +---upper_body_model
+¦   ¦   ¦       +---elasticnet
+¦   ¦   ¦       ¦       predictions.csv
+¦   ¦   ¦       ¦       pred_vs_actual.png
+¦   ¦   ¦       ¦       qq_plot.png
+¦   ¦   ¦       ¦       residuals.png
+¦   ¦   ¦       ¦       residuals_vs_fitted.png
+¦   ¦   ¦       ¦       
+¦   ¦   ¦       +---gam
+¦   ¦   ¦       ¦       predictions.csv
+¦   ¦   ¦       ¦       pred_vs_actual.png
+¦   ¦   ¦       ¦       qq_plot.png
+¦   ¦   ¦       ¦       residuals.png
+¦   ¦   ¦       ¦       residuals_vs_fitted.png
+¦   ¦   ¦       ¦       
+¦   ¦   ¦       +---mlp
+¦   ¦   ¦       ¦       predictions.csv
+¦   ¦   ¦       ¦       pred_vs_actual.png
+¦   ¦   ¦       ¦       qq_plot.png
+¦   ¦   ¦       ¦       residuals.png
+¦   ¦   ¦       ¦       residuals_vs_fitted.png
+¦   ¦   ¦       ¦       
+¦   ¦   ¦       +---rf
+¦   ¦   ¦               predictions.csv
+¦   ¦   ¦               pred_vs_actual.png
+¦   ¦   ¦               qq_plot.png
+¦   ¦   ¦               residuals.png
+¦   ¦   ¦               residuals_vs_fitted.png
+¦   ¦   ¦               
+¦   ¦   +---EDA
+¦   ¦   ¦   ¦   correlation_heatmap.png
+¦   ¦   ¦   ¦   
+¦   ¦   ¦   +---histograms
+¦   ¦   ¦   ¦       hist_arm_slot.png
+¦   ¦   ¦   ¦       hist_cog_velo_pkh.png
+¦   ¦   ¦   ¦       hist_elbow_absorption_fp_br.png
+¦   ¦   ¦   ¦       hist_elbow_flexion_fp.png
+¦   ¦   ¦   ¦       hist_elbow_pronation_fp.png
+¦   ¦   ¦   ¦       hist_elbow_transfer_fp_br.png
+¦   ¦   ¦   ¦       hist_glove_shoulder_abduction_fp.png
+¦   ¦   ¦   ¦       hist_glove_shoulder_external_rotation_fp.png
+¦   ¦   ¦   ¦       hist_lead_grf_x_max.png
+¦   ¦   ¦   ¦       hist_lead_grf_z_max.png
+¦   ¦   ¦   ¦       hist_lead_hip_absorption_fp_br.png
+¦   ¦   ¦   ¦       hist_lead_hip_transfer_fp_br.png
+¦   ¦   ¦   ¦       hist_lead_knee_absorption_fp_br.png
+¦   ¦   ¦   ¦       hist_lead_knee_extension_angular_velo_max.png
+¦   ¦   ¦   ¦       hist_lead_knee_extension_from_fp_to_br.png
+¦   ¦   ¦   ¦       hist_lead_knee_generation_fp_br.png
+¦   ¦   ¦   ¦       hist_lead_knee_transfer_fp_br.png
+¦   ¦   ¦   ¦       hist_max_cog_velo_x.png
+¦   ¦   ¦   ¦       hist_max_elbow_extension_velo.png
+¦   ¦   ¦   ¦       hist_max_elbow_flexion.png
+¦   ¦   ¦   ¦       hist_max_rotation_hip_shoulder_separation.png
+¦   ¦   ¦   ¦       hist_max_shoulder_external_rotation.png
+¦   ¦   ¦   ¦       hist_max_shoulder_horizontal_abduction.png
+¦   ¦   ¦   ¦       hist_max_shoulder_internal_rotational_velo.png
+¦   ¦   ¦   ¦       hist_max_torso_rotational_velo.png
+¦   ¦   ¦   ¦       hist_pelvis_anterior_tilt_fp.png
+¦   ¦   ¦   ¦       hist_pelvis_lumbar_transfer_fp_br.png
+¦   ¦   ¦   ¦       hist_pelvis_rotation_fp.png
+¦   ¦   ¦   ¦       hist_rear_grf_mag_max.png
+¦   ¦   ¦   ¦       hist_rear_grf_x_max.png
+¦   ¦   ¦   ¦       hist_rear_hip_generation_pkh_fp.png
+¦   ¦   ¦   ¦       hist_rear_knee_transfer_pkh_fp.png
+¦   ¦   ¦   ¦       hist_shoulder_generation_fp_br.png
+¦   ¦   ¦   ¦       hist_shoulder_horizontal_abduction_fp.png
+¦   ¦   ¦   ¦       hist_shoulder_internal_rotation_moment.png
+¦   ¦   ¦   ¦       hist_stride_angle.png
+¦   ¦   ¦   ¦       hist_stride_length.png
+¦   ¦   ¦   ¦       hist_torso_anterior_tilt_mer.png
+¦   ¦   ¦   ¦       hist_torso_lateral_tilt_br.png
+¦   ¦   ¦   ¦       hist_torso_lateral_tilt_fp.png
+¦   ¦   ¦   ¦       
+¦   ¦   ¦   +---scatterplots
+¦   ¦   ¦           scatter_arm_slot.png
+¦   ¦   ¦           scatter_cog_velo_pkh.png
+¦   ¦   ¦           scatter_elbow_absorption_fp_br.png
+¦   ¦   ¦           scatter_elbow_flexion_fp.png
+¦   ¦   ¦           scatter_elbow_pronation_fp.png
+¦   ¦   ¦           scatter_elbow_transfer_fp_br.png
+¦   ¦   ¦           scatter_glove_shoulder_abduction_fp.png
+¦   ¦   ¦           scatter_glove_shoulder_external_rotation_fp.png
+¦   ¦   ¦           scatter_lead_grf_x_max.png
+¦   ¦   ¦           scatter_lead_grf_z_max.png
+¦   ¦   ¦           scatter_lead_hip_absorption_fp_br.png
+¦   ¦   ¦           scatter_lead_hip_transfer_fp_br.png
+¦   ¦   ¦           scatter_lead_knee_absorption_fp_br.png
+¦   ¦   ¦           scatter_lead_knee_extension_angular_velo_max.png
+¦   ¦   ¦           scatter_lead_knee_extension_from_fp_to_br.png
+¦   ¦   ¦           scatter_lead_knee_generation_fp_br.png
+¦   ¦   ¦           scatter_lead_knee_transfer_fp_br.png
+¦   ¦   ¦           scatter_max_cog_velo_x.png
+¦   ¦   ¦           scatter_max_elbow_extension_velo.png
+¦   ¦   ¦           scatter_max_elbow_flexion.png
+¦   ¦   ¦           scatter_max_rotation_hip_shoulder_separation.png
+¦   ¦   ¦           scatter_max_shoulder_external_rotation.png
+¦   ¦   ¦           scatter_max_shoulder_horizontal_abduction.png
+¦   ¦   ¦           scatter_max_shoulder_internal_rotational_velo.png
+¦   ¦   ¦           scatter_max_torso_rotational_velo.png
+¦   ¦   ¦           scatter_pelvis_anterior_tilt_fp.png
+¦   ¦   ¦           scatter_pelvis_lumbar_transfer_fp_br.png
+¦   ¦   ¦           scatter_pelvis_rotation_fp.png
+¦   ¦   ¦           scatter_rear_grf_mag_max.png
+¦   ¦   ¦           scatter_rear_grf_x_max.png
+¦   ¦   ¦           scatter_rear_hip_generation_pkh_fp.png
+¦   ¦   ¦           scatter_rear_knee_transfer_pkh_fp.png
+¦   ¦   ¦           scatter_shoulder_generation_fp_br.png
+¦   ¦   ¦           scatter_shoulder_horizontal_abduction_fp.png
+¦   ¦   ¦           scatter_shoulder_internal_rotation_moment.png
+¦   ¦   ¦           scatter_stride_angle.png
+¦   ¦   ¦           scatter_stride_length.png
+¦   ¦   ¦           scatter_torso_anterior_tilt_mer.png
+¦   ¦   ¦           scatter_torso_lateral_tilt_br.png
+¦   ¦   ¦           scatter_torso_lateral_tilt_fp.png
+¦   ¦   ¦           
+¦   ¦   +---predictions
+¦   +---predictions
+¦       +---global
+¦       ¦   +---by_model
+¦       ¦   ¦       all_predictions.csv
+¦       ¦   ¦       
+¦       ¦   +---metrics
+¦       ¦           model_r2_scores.csv
+¦       ¦           
+¦       +---grouped
+¦           +---playing_level
+¦           ¦   +---college
+¦           ¦   ¦   +---force_model
+¦           ¦   ¦   ¦       elasticnet_predictions.csv
+¦           ¦   ¦   ¦       gam_predictions.csv
+¦           ¦   ¦   ¦       mlp_predictions.csv
+¦           ¦   ¦   ¦       rf_predictions.csv
+¦           ¦   ¦   ¦       
+¦           ¦   ¦   +---full_model
+¦           ¦   ¦   ¦       elasticnet_predictions.csv
+¦           ¦   ¦   ¦       gam_predictions.csv
+¦           ¦   ¦   ¦       mlp_predictions.csv
+¦           ¦   ¦   ¦       rf_predictions.csv
+¦           ¦   ¦   ¦       
+¦           ¦   ¦   +---lower_body_model
+¦           ¦   ¦   ¦       elasticnet_predictions.csv
+¦           ¦   ¦   ¦       gam_predictions.csv
+¦           ¦   ¦   ¦       mlp_predictions.csv
+¦           ¦   ¦   ¦       rf_predictions.csv
+¦           ¦   ¦   ¦       
+¦           ¦   ¦   +---upper_body_model
+¦           ¦   ¦           elasticnet_predictions.csv
+¦           ¦   ¦           gam_predictions.csv
+¦           ¦   ¦           mlp_predictions.csv
+¦           ¦   ¦           rf_predictions.csv
+¦           ¦   ¦           
+¦           ¦   +---high_school
+¦           ¦   ¦   +---force_model
+¦           ¦   ¦   ¦       elasticnet_predictions.csv
+¦           ¦   ¦   ¦       gam_predictions.csv
+¦           ¦   ¦   ¦       mlp_predictions.csv
+¦           ¦   ¦   ¦       rf_predictions.csv
+¦           ¦   ¦   ¦       
+¦           ¦   ¦   +---full_model
+¦           ¦   ¦   ¦       elasticnet_predictions.csv
+¦           ¦   ¦   ¦       gam_predictions.csv
+¦           ¦   ¦   ¦       mlp_predictions.csv
+¦           ¦   ¦   ¦       rf_predictions.csv
+¦           ¦   ¦   ¦       
+¦           ¦   ¦   +---lower_body_model
+¦           ¦   ¦   ¦       elasticnet_predictions.csv
+¦           ¦   ¦   ¦       gam_predictions.csv
+¦           ¦   ¦   ¦       mlp_predictions.csv
+¦           ¦   ¦   ¦       rf_predictions.csv
+¦           ¦   ¦   ¦       
+¦           ¦   ¦   +---upper_body_model
+¦           ¦   ¦           elasticnet_predictions.csv
+¦           ¦   ¦           gam_predictions.csv
+¦           ¦   ¦           mlp_predictions.csv
+¦           ¦   ¦           rf_predictions.csv
+¦           ¦   ¦           
+¦           ¦   +---independent
+¦           ¦   ¦   +---force_model
+¦           ¦   ¦   ¦       elasticnet_predictions.csv
+¦           ¦   ¦   ¦       gam_predictions.csv
+¦           ¦   ¦   ¦       mlp_predictions.csv
+¦           ¦   ¦   ¦       rf_predictions.csv
+¦           ¦   ¦   ¦       
+¦           ¦   ¦   +---full_model
+¦           ¦   ¦   ¦       elasticnet_predictions.csv
+¦           ¦   ¦   ¦       gam_predictions.csv
+¦           ¦   ¦   ¦       mlp_predictions.csv
+¦           ¦   ¦   ¦       rf_predictions.csv
+¦           ¦   ¦   ¦       
+¦           ¦   ¦   +---lower_body_model
+¦           ¦   ¦   ¦       elasticnet_predictions.csv
+¦           ¦   ¦   ¦       gam_predictions.csv
+¦           ¦   ¦   ¦       mlp_predictions.csv
+¦           ¦   ¦   ¦       rf_predictions.csv
+¦           ¦   ¦   ¦       
+¦           ¦   ¦   +---upper_body_model
+¦           ¦   ¦           elasticnet_predictions.csv
+¦           ¦   ¦           gam_predictions.csv
+¦           ¦   ¦           mlp_predictions.csv
+¦           ¦   ¦           rf_predictions.csv
+¦           ¦   ¦           
+¦           ¦   +---milb
+¦           ¦       +---force_model
+¦           ¦       ¦       elasticnet_predictions.csv
+¦           ¦       ¦       gam_predictions.csv
+¦           ¦       ¦       mlp_predictions.csv
+¦           ¦       ¦       rf_predictions.csv
+¦           ¦       ¦       
+¦           ¦       +---full_model
+¦           ¦       ¦       elasticnet_predictions.csv
+¦           ¦       ¦       gam_predictions.csv
+¦           ¦       ¦       mlp_predictions.csv
+¦           ¦       ¦       rf_predictions.csv
+¦           ¦       ¦       
+¦           ¦       +---lower_body_model
+¦           ¦       ¦       elasticnet_predictions.csv
+¦           ¦       ¦       gam_predictions.csv
+¦           ¦       ¦       mlp_predictions.csv
+¦           ¦       ¦       rf_predictions.csv
+¦           ¦       ¦       
+¦           ¦       +---upper_body_model
+¦           ¦               elasticnet_predictions.csv
+¦           ¦               gam_predictions.csv
+¦           ¦               mlp_predictions.csv
+¦           ¦               rf_predictions.csv
+¦           ¦               
+¦           +---p_throws
+¦           ¦   +---L
+¦           ¦   ¦   +---force_model
+¦           ¦   ¦   ¦       elasticnet_predictions.csv
+¦           ¦   ¦   ¦       gam_predictions.csv
+¦           ¦   ¦   ¦       mlp_predictions.csv
+¦           ¦   ¦   ¦       rf_predictions.csv
+¦           ¦   ¦   ¦       
+¦           ¦   ¦   +---full_model
+¦           ¦   ¦   ¦       elasticnet_predictions.csv
+¦           ¦   ¦   ¦       gam_predictions.csv
+¦           ¦   ¦   ¦       mlp_predictions.csv
+¦           ¦   ¦   ¦       rf_predictions.csv
+¦           ¦   ¦   ¦       
+¦           ¦   ¦   +---lower_body_model
+¦           ¦   ¦   ¦       elasticnet_predictions.csv
+¦           ¦   ¦   ¦       gam_predictions.csv
+¦           ¦   ¦   ¦       mlp_predictions.csv
+¦           ¦   ¦   ¦       rf_predictions.csv
+¦           ¦   ¦   ¦       
+¦           ¦   ¦   +---upper_body_model
+¦           ¦   ¦           elasticnet_predictions.csv
+¦           ¦   ¦           gam_predictions.csv
+¦           ¦   ¦           mlp_predictions.csv
+¦           ¦   ¦           rf_predictions.csv
+¦           ¦   ¦           
+¦           ¦   +---R
+¦           ¦       +---force_model
+¦           ¦       ¦       elasticnet_predictions.csv
+¦           ¦       ¦       gam_predictions.csv
+¦           ¦       ¦       mlp_predictions.csv
+¦           ¦       ¦       rf_predictions.csv
+¦           ¦       ¦       
+¦           ¦       +---full_model
+¦           ¦       ¦       elasticnet_predictions.csv
+¦           ¦       ¦       gam_predictions.csv
+¦           ¦       ¦       mlp_predictions.csv
+¦           ¦       ¦       rf_predictions.csv
+¦           ¦       ¦       
+¦           ¦       +---lower_body_model
+¦           ¦       ¦       elasticnet_predictions.csv
+¦           ¦       ¦       gam_predictions.csv
+¦           ¦       ¦       mlp_predictions.csv
+¦           ¦       ¦       rf_predictions.csv
+¦           ¦       ¦       
+¦           ¦       +---upper_body_model
+¦           ¦               elasticnet_predictions.csv
+¦           ¦               gam_predictions.csv
+¦           ¦               mlp_predictions.csv
+¦           ¦               rf_predictions.csv
+¦           ¦               
+¦           +---user
+¦               +---1002.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1003.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1005.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1027.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1029.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1062.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1068.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1466.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1540.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1543.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1547.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1552.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1557.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1558.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1562.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1596.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1606.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1612.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1618.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1620.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1621.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1644.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1663.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1667.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1685.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1706.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1724.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1737.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---1756.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---2.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---283.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---538.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---560.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---610.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---616.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---628.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---750.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---782.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---789.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---870.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---90.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---905.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---906.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---917.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---920.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---949.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---970.0
+¦               ¦   +---force_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---full_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---lower_body_model
+¦               ¦   ¦       elasticnet_predictions.csv
+¦               ¦   ¦       gam_predictions.csv
+¦               ¦   ¦       mlp_predictions.csv
+¦               ¦   ¦       rf_predictions.csv
+¦               ¦   ¦       
+¦               ¦   +---upper_body_model
+¦               ¦           elasticnet_predictions.csv
+¦               ¦           gam_predictions.csv
+¦               ¦           mlp_predictions.csv
+¦               ¦           rf_predictions.csv
+¦               ¦           
+¦               +---986.0
+¦                   +---force_model
+¦                   ¦       elasticnet_predictions.csv
+¦                   ¦       gam_predictions.csv
+¦                   ¦       mlp_predictions.csv
+¦                   ¦       rf_predictions.csv
+¦                   ¦       
+¦                   +---full_model
+¦                   ¦       elasticnet_predictions.csv
+¦                   ¦       gam_predictions.csv
+¦                   ¦       mlp_predictions.csv
+¦                   ¦       rf_predictions.csv
+¦                   ¦       
+¦                   +---lower_body_model
+¦                   ¦       elasticnet_predictions.csv
+¦                   ¦       gam_predictions.csv
+¦                   ¦       mlp_predictions.csv
+¦                   ¦       rf_predictions.csv
+¦                   ¦       
+¦                   +---upper_body_model
+¦                           elasticnet_predictions.csv
+¦                           gam_predictions.csv
+¦                           mlp_predictions.csv
+¦                           rf_predictions.csv
+¦                           
++---pipeline
+¦   ¦   data_split.py
+¦   ¦   evaluate_model.py
+¦   ¦   feature_selection.py
+¦   ¦   predict.py
+¦   ¦   preprocess.py
+¦   ¦   train_elasticnet.py
+¦   ¦   train_gam.py
+¦   ¦   train_mlp.py
+¦   ¦   train_rf.py
+¦   ¦   __init__.py
+¦   ¦   
+¦   +---__pycache__
+¦           data_split.cpython-312.pyc
+¦           evaluate_model.cpython-312.pyc
+¦           feature_selection.cpython-312.pyc
+¦           predict.cpython-312.pyc
+¦           preprocess.cpython-312.pyc
+¦           train_elasticnet.cpython-312.pyc
+¦           train_gam.cpython-312.pyc
+¦           train_mlp.cpython-312.pyc
+¦           train_model.cpython-312.pyc
+¦           train_rf.cpython-312.pyc
+¦           __init__.cpython-312.pyc
+¦           
++---utils
+    ¦   config.py
+    ¦   helpers.py
+    ¦   __init__.py
+    ¦   
+    +---__pycache__
+            config.cpython-312.pyc
+            helpers.cpython-312.pyc
+            __init__.cpython-312.pyc
+            

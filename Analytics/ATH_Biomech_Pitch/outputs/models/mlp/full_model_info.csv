@@ -1,0 +1,13 @@
+Feature,Weight_Info
+lead_grf_z_max,[hidden]
+max_shoulder_internal_rotational_velo,[hidden]
+max_shoulder_external_rotation,[hidden]
+max_shoulder_horizontal_abduction,[hidden]
+elbow_transfer_fp_br,[hidden]
+max_torso_rotational_velo,[hidden]
+max_rotation_hip_shoulder_separation,[hidden]
+pelvis_anterior_tilt_fp,[hidden]
+max_cog_velo_x,[hidden]
+lead_knee_extension_from_fp_to_br,[hidden]
+lead_knee_transfer_fp_br,[hidden]
+rear_hip_generation_pkh_fp,[hidden]

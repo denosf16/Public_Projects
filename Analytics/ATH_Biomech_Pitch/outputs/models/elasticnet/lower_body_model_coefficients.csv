@@ -1,0 +1,8 @@
+Feature,Coefficient
+max_torso_rotational_velo,0.973636153300234
+pelvis_anterior_tilt_fp,0.784270774017979
+max_rotation_hip_shoulder_separation,0.7470196360734643
+max_cog_velo_x,0.7454065713391845
+rear_hip_generation_pkh_fp,0.602493098599912
+lead_knee_extension_from_fp_to_br,0.5433221217800664
+lead_knee_transfer_fp_br,0.24693086065115114
